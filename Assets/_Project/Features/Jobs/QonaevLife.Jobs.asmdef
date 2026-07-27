@@ -1,7 +1,15 @@
 {
     "name": "QonaevLife.Jobs",
     "rootNamespace": "QonaevLife.Jobs",
-    "references": ["QonaevLife.Core", "QonaevLife.Content", "QonaevLife.Economy", "QonaevLife.World", "QonaevLife.Quests", "QonaevLife.Player"],
+    "references": [
+        "QonaevLife.Core",
+        "QonaevLife.Content",
+        "QonaevLife.Economy",
+        "QonaevLife.World",
+        "QonaevLife.Quests",
+        "QonaevLife.Player",
+        "QonaevLife.Dialogue"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

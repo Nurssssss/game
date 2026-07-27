@@ -21,7 +21,8 @@ namespace QonaevLife.Bootstrap
         public GameSession(ServiceRegistry registry, EventBus eventBus, GameClock clock,
             WeatherService weather, WalletService wallet, NeedsService needs,
             LanguageProgressService language, ISaveService saveService,
-            LocationRegistry locations, DialogueService dialogue, JobShiftService jobs)
+            LocationRegistry locations, DialogueService dialogue, JobShiftService jobs,
+            DialogueTriggerCoordinator npcState)
         {
             Registry = registry;
             EventBus = eventBus;
@@ -34,6 +35,7 @@ namespace QonaevLife.Bootstrap
             Locations = locations;
             Dialogue = dialogue;
             Jobs = jobs;
+            NpcState = npcState;
         }
 
         public ServiceRegistry Registry { get; }
@@ -47,6 +49,7 @@ namespace QonaevLife.Bootstrap
         public LocationRegistry Locations { get; }
         public DialogueService Dialogue { get; }
         public JobShiftService Jobs { get; }
+        public DialogueTriggerCoordinator NpcState { get; }
 
         /// <summary>Продвигает время сессии на прошедший кадр.</summary>
         public void Tick(float realDeltaSeconds)
@@ -77,6 +80,7 @@ namespace QonaevLife.Bootstrap
             Wallet.CaptureState(data.economy);
             Needs.CaptureState(data.player);
             Language.CaptureState(data.language);
+            NpcState.CaptureState(data.npcs);
 
             return data;
         }
@@ -93,6 +97,7 @@ namespace QonaevLife.Bootstrap
             Wallet.RestoreState(data.economy);
             Needs.RestoreState(data.player);
             Language.RestoreState(data.language);
+            NpcState.RestoreState(data.npcs);
         }
 
         public void Shutdown() => Registry.ShutdownAll();
@@ -140,10 +145,16 @@ namespace QonaevLife.Bootstrap
             var dialogue = new DialogueService(content, eventBus, language);
             var jobs = new JobShiftService(content, eventBus, clock, wallet, locations);
 
-            // Координатор запускает смену по взаимодействию с пунктом выдачи.
-            // ID берутся из конфига, а не из кода (п. 10 ТЗ).
+            var dialogueTrigger = new DialogueTriggerCoordinator(
+                eventBus, dialogue, content, clock);
+
+            // Координатор смены. ID берутся из конфига, а не из кода (п. 10 ТЗ).
+            // dialogueGuard не даёт выдать смену молча там, где стоит NPC:
+            // работу игрок получает через разговор с диспетчером.
             var coordinator = new CourierShiftCoordinator(
-                eventBus, jobs, config.PrimaryJobId, config.PrimaryJobHubLocationId);
+                eventBus, jobs, config.PrimaryJobId, config.PrimaryJobHubLocationId,
+                skillProvider: null,
+                dialogueGuard: () => dialogue.IsActive);
 
             registry.Register<IEventBus>(eventBus);
             registry.Register<IGameClock>(clock);
@@ -158,13 +169,14 @@ namespace QonaevLife.Bootstrap
             registry.Register(locations);
             registry.Register(dialogue);
             registry.Register(jobs);
+            registry.Register(dialogueTrigger);
             registry.Register(coordinator);
 
             registry.InitializeAll();
 
             return new GameSession(
                 registry, eventBus, clock, weather, wallet, needs, language, saveService,
-                locations, dialogue, jobs);
+                locations, dialogue, jobs, dialogueTrigger);
         }
 
         /// <summary>

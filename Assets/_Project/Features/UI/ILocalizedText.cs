@@ -99,6 +99,21 @@ namespace QonaevLife.UI
                 ["dialogue.add_word"] = "Добавить слово в словарь",
                 ["dialogue.close"] = "Закрыть",
 
+                // Режимы перевода (FR-041)
+                ["mode.RussianWithKazakh"] = "Русский + казахский перевод  (T — сменить)",
+                ["mode.KazakhWithRussian"] = "Казахский + русский перевод  (T — сменить)",
+                ["mode.KazakhOnly"] = "Только казахский  (T — сменить)",
+                ["mode.InterfaceLanguageOnly"] = "Только язык интерфейса  (T — сменить)",
+
+                // Словарные слова
+                ["word.salem"] = "Сәлем",
+                ["word.sau_bolynyz"] = "Сау болыңыз",
+                ["word.rahmet"] = "Рақмет",
+                ["word.iya"] = "Иә",
+                ["word.zhok"] = "Жоқ",
+                ["word.zhumys"] = "Жұмыс",
+                ["word.kofe"] = "Кофе",
+
                 // Потребности
                 ["need.hunger"] = "Голод",
                 ["need.energy"] = "Энергия",

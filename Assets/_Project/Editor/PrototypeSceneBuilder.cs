@@ -386,6 +386,159 @@ namespace QonaevLife.Editor
             prompt.Configure(promptRoot, promptLabel);
 
             promptRoot.SetActive(false);
+
+            BuildDialogueWindow(canvasObject);
+        }
+
+        /// <summary>
+        /// Окно диалога: реплика, перевод, варианты ответа и словарные слова
+        /// (FR-033, FR-040 — FR-042).
+        /// </summary>
+        private static void BuildDialogueWindow(GameObject canvasObject)
+        {
+            var window = new GameObject("DialogueWindow");
+            window.transform.SetParent(canvasObject.transform, worldPositionStays: false);
+
+            var panel = window.AddComponent<Image>();
+            panel.color = new Color(0.05f, 0.06f, 0.09f, 0.92f);
+
+            var panelRect = panel.rectTransform;
+            panelRect.anchorMin = new Vector2(0.5f, 0f);
+            panelRect.anchorMax = new Vector2(0.5f, 0f);
+            panelRect.pivot = new Vector2(0.5f, 0f);
+            panelRect.anchoredPosition = new Vector2(0f, 40f);
+            panelRect.sizeDelta = new Vector2(1400f, 460f);
+
+            var speaker = CreateLabel(window.transform, "SpeakerLabel",
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(28f, -20f), new Vector2(520f, 44f), 30f,
+                TextAlignmentOptions.TopLeft);
+            speaker.color = new Color(0.55f, 0.85f, 1f);
+
+            var mode = CreateLabel(window.transform, "ModeLabel",
+                new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                new Vector2(-28f, -20f), new Vector2(560f, 40f), 22f,
+                TextAlignmentOptions.TopRight);
+            mode.color = new Color(0.75f, 0.75f, 0.8f);
+
+            var primary = CreateLabel(window.transform, "PrimaryLabel",
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -78f), new Vector2(-56f, 76f), 30f,
+                TextAlignmentOptions.TopLeft);
+
+            var translation = CreateLabel(window.transform, "TranslationLabel",
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -158f), new Vector2(-56f, 60f), 24f,
+                TextAlignmentOptions.TopLeft);
+            translation.color = new Color(0.72f, 0.78f, 0.72f);
+
+            // Контейнер словарных слов — горизонтальный ряд кнопок.
+            var wordRow = CreateRow(window.transform, "WordRow",
+                anchoredPosition: new Vector2(28f, -224f), height: 44f, horizontal: true);
+
+            var wordTemplate = CreateButtonTemplate(wordRow, "WordButtonTemplate",
+                new Vector2(220f, 40f), fontSize: 20f,
+                background: new Color(0.16f, 0.3f, 0.22f, 0.95f));
+
+            // Варианты ответа — вертикальный список.
+            var choiceColumn = CreateRow(window.transform, "ChoiceColumn",
+                anchoredPosition: new Vector2(28f, -284f), height: 160f, horizontal: false);
+
+            var choiceTemplate = CreateButtonTemplate(choiceColumn, "ChoiceButtonTemplate",
+                new Vector2(1340f, 40f), fontSize: 24f,
+                background: new Color(0.14f, 0.16f, 0.24f, 0.95f));
+
+            var hint = CreateLabel(window.transform, "HintLabel",
+                new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                new Vector2(0f, 12f), new Vector2(1200f, 34f), 20f,
+                TextAlignmentOptions.Center);
+            hint.color = new Color(0.6f, 0.6f, 0.66f);
+            hint.text = "1–4 — выбрать ответ    T — режим перевода    Esc — закрыть";
+
+            var view = canvasObject.AddComponent<DialogueView>();
+            view.Configure(window, speaker, primary, translation,
+                choiceColumn, choiceTemplate, wordRow, wordTemplate, mode);
+
+            canvasObject.AddComponent<DialogueInputGate>();
+
+            window.SetActive(false);
+        }
+
+        /// <summary>Контейнер с автоматической раскладкой для кнопок.</summary>
+        private static Transform CreateRow(Transform parent, string name,
+            Vector2 anchoredPosition, float height, bool horizontal)
+        {
+            var row = new GameObject(name);
+            row.transform.SetParent(parent, worldPositionStays: false);
+
+            var rect = row.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = new Vector2(1340f, height);
+
+            if (horizontal)
+            {
+                var layout = row.AddComponent<HorizontalLayoutGroup>();
+                layout.spacing = 10f;
+                layout.childControlWidth = false;
+                layout.childControlHeight = false;
+                layout.childForceExpandWidth = false;
+                layout.childForceExpandHeight = false;
+                layout.childAlignment = TextAnchor.UpperLeft;
+            }
+            else
+            {
+                var layout = row.AddComponent<VerticalLayoutGroup>();
+                layout.spacing = 8f;
+                layout.childControlWidth = false;
+                layout.childControlHeight = false;
+                layout.childForceExpandWidth = false;
+                layout.childForceExpandHeight = false;
+                layout.childAlignment = TextAnchor.UpperLeft;
+            }
+
+            return row.transform;
+        }
+
+        /// <summary>
+        /// Шаблон кнопки. Остаётся выключенным на сцене: представление клонирует
+        /// его по мере надобности, а сам шаблон никогда не показывается.
+        /// </summary>
+        private static Button CreateButtonTemplate(Transform parent, string name,
+            Vector2 size, float fontSize, Color background)
+        {
+            var buttonObject = new GameObject(name);
+            buttonObject.transform.SetParent(parent, worldPositionStays: false);
+
+            var image = buttonObject.AddComponent<Image>();
+            image.color = background;
+
+            var rect = image.rectTransform;
+            rect.sizeDelta = size;
+
+            var button = buttonObject.AddComponent<Button>();
+            button.targetGraphic = image;
+
+            var labelObject = new GameObject("Label");
+            labelObject.transform.SetParent(buttonObject.transform, worldPositionStays: false);
+
+            var label = labelObject.AddComponent<TextMeshProUGUI>();
+            label.fontSize = fontSize;
+            label.alignment = TextAlignmentOptions.Left;
+            label.color = Color.white;
+            label.enableWordWrapping = false;
+            label.overflowMode = TextOverflowModes.Ellipsis;
+
+            var labelRect = label.rectTransform;
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(14f, 2f);
+            labelRect.offsetMax = new Vector2(-14f, -2f);
+
+            buttonObject.SetActive(false);
+            return button;
         }
 
         private static TMP_Text CreateLabel(Transform parent, string name,

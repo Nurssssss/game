@@ -95,6 +95,18 @@ namespace QonaevLife.Bootstrap
                 hud.Bind(_session.EventBus, _session.Clock, _session.Wallet,
                     _session.Jobs, localizedText);
             }
+
+            var dialogueView = FindFirstObjectByType<UI.DialogueView>();
+            if (dialogueView != null)
+            {
+                dialogueView.Bind(_session.EventBus, _session.Dialogue,
+                    _session.Language, localizedText);
+            }
+
+            var gate = FindFirstObjectByType<UI.DialogueInputGate>();
+            var playerInput = FindFirstObjectByType<Player.PlayerInputBridge>();
+            if (gate != null && dialogueView != null)
+                gate.Bind(_session.EventBus, playerInput, dialogueView);
         }
 
         private void Update()

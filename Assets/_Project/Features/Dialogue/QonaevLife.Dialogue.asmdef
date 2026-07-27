@@ -1,7 +1,13 @@
 {
     "name": "QonaevLife.Dialogue",
     "rootNamespace": "QonaevLife.Dialogue",
-    "references": ["QonaevLife.Core", "QonaevLife.Content", "QonaevLife.Language", "QonaevLife.Npc"],
+    "references": [
+        "QonaevLife.Core",
+        "QonaevLife.Content",
+        "QonaevLife.Language",
+        "QonaevLife.Npc",
+        "QonaevLife.World"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
