@@ -54,8 +54,31 @@ namespace QonaevLife.Bootstrap
             if (startNewGameOnAwake)
                 GameSessionBuilder.ApplyNewGameState(_session, config);
 
+            BindSceneObjects();
+
             Debug.Log($"[Bootstrap] Сессия запущена. День {_session.Clock.Day}, " +
                       $"фаза {_session.Clock.Phase}, баланс {_session.Wallet.Balance}.");
+        }
+
+        /// <summary>
+        /// Связывает объекты сцены с сессией: детектор взаимодействия и точки
+        /// интереса без этого молчат, что позволяет открыть сцену без запуска.
+        /// </summary>
+        private void BindSceneObjects()
+        {
+            var context = new InteractionContext(_session.EventBus, _session.Clock);
+
+            foreach (var binder in FindObjectsByType<Player.PlayerSessionBinder>(
+                         FindObjectsSortMode.None))
+            {
+                binder.Detector?.Bind(_session.EventBus, context);
+            }
+
+            foreach (var interactable in FindObjectsByType<World.LocationInteractable>(
+                         FindObjectsSortMode.None))
+            {
+                interactable.Bind(_session.Locations);
+            }
         }
 
         private void Update()

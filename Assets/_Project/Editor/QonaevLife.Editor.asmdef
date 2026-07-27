@@ -1,8 +1,28 @@
 {
     "name": "QonaevLife.Editor",
     "rootNamespace": "QonaevLife.Editor",
-    "references": ["QonaevLife.Core", "QonaevLife.Content", "QonaevLife.Player", "QonaevLife.World", "QonaevLife.Npc", "QonaevLife.Dialogue", "QonaevLife.Language", "QonaevLife.Economy", "QonaevLife.Jobs", "QonaevLife.Quests", "QonaevLife.Transport", "QonaevLife.Property", "QonaevLife.UI", "QonaevLife.Audio"],
-    "includePlatforms": ["Editor"],
+    "references": [
+        "QonaevLife.Core",
+        "QonaevLife.Content",
+        "QonaevLife.Player",
+        "QonaevLife.World",
+        "QonaevLife.Npc",
+        "QonaevLife.Dialogue",
+        "QonaevLife.Language",
+        "QonaevLife.Economy",
+        "QonaevLife.Jobs",
+        "QonaevLife.Quests",
+        "QonaevLife.Transport",
+        "QonaevLife.Property",
+        "QonaevLife.UI",
+        "QonaevLife.Audio",
+        "QonaevLife.Bootstrap",
+        "Unity.InputSystem",
+        "Unity.Cinemachine"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

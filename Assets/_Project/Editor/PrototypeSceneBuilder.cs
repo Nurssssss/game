@@ -1,0 +1,423 @@
+using System.IO;
+using QonaevLife.Bootstrap;
+using QonaevLife.Content;
+using QonaevLife.Player;
+using QonaevLife.World;
+using Unity.Cinemachine;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace QonaevLife.Editor
+{
+    /// <summary>
+    /// Собирает играбельную тестовую сцену прототипа: серый блок-аут района,
+    /// персонаж от третьего лица, камера, точки интереса и запущенную сессию.
+    /// Сцену строит сам Unity, поэтому все ссылки и GUID валидны.
+    /// </summary>
+    public static class PrototypeSceneBuilder
+    {
+        private const string SceneFolder = "Assets/_Project/Scenes";
+        private const string ScenePath = SceneFolder + "/Prototype_Qonaev.unity";
+        private const string InputActionsPath = "Assets/InputSystem_Actions.inputactions";
+
+        [MenuItem("Qonaev Life/Собрать тестовую сцену", priority = 11)]
+        public static void BuildMenuCommand()
+        {
+            if (!EditorUtility.DisplayDialog(
+                    "Собрать тестовую сцену",
+                    "Будет создан контент прототипа и сцена Prototype_Qonaev.\n\n" +
+                    "Существующая тестовая сцена будет перезаписана. Продолжить?",
+                    "Собрать", "Отмена"))
+            {
+                return;
+            }
+
+            // Контент создаётся до сцены, но ссылки берём после NewScene:
+            // создание новой сцены обнуляет ранее полученные ссылки на ассеты,
+            // и они молча сериализуются как fileID: 0.
+            PrototypeContentBuilder.Build();
+            PrototypeContentBuilder.EnsureSessionConfig();
+
+            var scene = EditorSceneManager.NewScene(
+                NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var database = PrototypeContentBuilder.LoadDatabase();
+            var config = PrototypeContentBuilder.LoadSessionConfig();
+
+            BuildLighting();
+            BuildGround();
+            var player = BuildPlayer();
+            BuildCamera(player);
+            BuildLocationMarkers();
+            BuildBootstrap(config, database);
+
+            if (!Directory.Exists(SceneFolder))
+                Directory.CreateDirectory(SceneFolder);
+
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            AssetDatabase.Refresh();
+
+            Debug.Log($"[Прототип] Сцена собрана: {ScenePath}. " +
+                      "Нажмите Play, чтобы проверить перемещение и взаимодействие.");
+        }
+
+        // ------------------------------------------------------------------
+
+        private static void BuildLighting()
+        {
+            var sun = new GameObject("Directional Light");
+            var light = sun.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.color = new Color(1f, 0.96f, 0.9f);
+            light.intensity = 1.1f;
+            light.shadows = LightShadows.Soft;
+            sun.transform.rotation = Quaternion.Euler(48f, 35f, 0f);
+        }
+
+        private static void BuildGround()
+        {
+            var root = new GameObject("World");
+
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            ground.name = "Ground";
+            ground.transform.SetParent(root.transform);
+            ground.transform.localScale = new Vector3(8f, 1f, 8f); // 80 × 80 м
+            ground.GetComponent<Renderer>().sharedMaterial = CreateMaterial(
+                "Mat_Ground", new Color(0.32f, 0.33f, 0.35f));
+
+            // Несколько кварталов серого блок-аута, чтобы камера и коллизии
+            // проверялись в узких местах, а не на пустой плоскости.
+            var blocks = new (Vector3 Position, Vector3 Size)[]
+            {
+                (new Vector3(-10f, 3f, 20f), new Vector3(14f, 6f, 10f)),
+                (new Vector3(12f, 4f, 18f), new Vector3(10f, 8f, 12f)),
+                (new Vector3(24f, 3f, -4f), new Vector3(8f, 6f, 18f)),
+                (new Vector3(-22f, 4f, -6f), new Vector3(10f, 8f, 14f)),
+                (new Vector3(2f, 2.5f, -26f), new Vector3(18f, 5f, 8f))
+            };
+
+            var wallMaterial = CreateMaterial("Mat_Building", new Color(0.55f, 0.54f, 0.5f));
+
+            for (var i = 0; i < blocks.Length; i++)
+            {
+                var block = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                block.name = $"Building_{i:D2}";
+                block.transform.SetParent(root.transform);
+                block.transform.position = blocks[i].Position;
+                block.transform.localScale = blocks[i].Size;
+                block.GetComponent<Renderer>().sharedMaterial = wallMaterial;
+                block.isStatic = true;
+            }
+        }
+
+        private static GameObject BuildPlayer()
+        {
+            var player = new GameObject("Player");
+            player.transform.position = new Vector3(0f, 1.1f, 0f);
+
+            var controller = player.AddComponent<CharacterController>();
+            controller.height = 1.8f;
+            controller.radius = 0.3f;
+            controller.center = new Vector3(0f, 0.9f, 0f);
+            controller.slopeLimit = 50f;
+            controller.stepOffset = 0.35f;
+
+            // Видимое тело: капсула без коллайдера, иначе он будет спорить
+            // с CharacterController.
+            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            body.name = "Body";
+            body.transform.SetParent(player.transform);
+            body.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+            body.transform.localScale = new Vector3(0.6f, 0.9f, 0.6f);
+            Object.DestroyImmediate(body.GetComponent<Collider>());
+            body.GetComponent<Renderer>().sharedMaterial = CreateMaterial(
+                "Mat_Player", new Color(0.2f, 0.55f, 0.85f));
+
+            // Маркер направления взгляда — иначе на капсуле не видно поворот.
+            var nose = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            nose.name = "FacingMarker";
+            nose.transform.SetParent(player.transform);
+            nose.transform.localPosition = new Vector3(0f, 1.3f, 0.35f);
+            nose.transform.localScale = new Vector3(0.16f, 0.16f, 0.3f);
+            Object.DestroyImmediate(nose.GetComponent<Collider>());
+            nose.GetComponent<Renderer>().sharedMaterial = CreateMaterial(
+                "Mat_PlayerFacing", new Color(0.95f, 0.75f, 0.2f));
+
+            var motor = player.AddComponent<PlayerMotor>();
+            var detector = player.AddComponent<InteractionDetector>();
+            var input = player.AddComponent<PlayerInputBridge>();
+            var binder = player.AddComponent<PlayerSessionBinder>();
+
+            AssignInputActions(input, detector);
+            AssignPrivateField(binder, "interactionDetector", detector);
+            AssignPrivateField(binder, "motor", motor);
+
+            return player;
+        }
+
+        /// <summary>
+        /// Назначает действия из готового ассета шаблона: Move, Sprint, Interact.
+        /// </summary>
+        private static void AssignInputActions(PlayerInputBridge input,
+            InteractionDetector detector)
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputActionsPath);
+
+            if (asset == null)
+            {
+                Debug.LogWarning(
+                    $"[Прототип] Не найден {InputActionsPath}. " +
+                    "Назначьте действия ввода на объекте Player вручную.");
+            }
+            else
+            {
+                AssignActionReference(input, "moveAction", asset, "Player/Move");
+                AssignActionReference(input, "sprintAction", asset, "Player/Sprint");
+                AssignActionReference(input, "interactAction", asset, "Player/Interact");
+            }
+
+            AssignPrivateField(input, "interactionDetector", detector);
+        }
+
+        /// <summary>
+        /// Находит подобъект InputActionReference внутри ассета действий и
+        /// назначает его в поле. Создавать ссылку через
+        /// InputActionReference.Create нельзя: получится объект вне ассета,
+        /// и после перезапуска редактора ссылка в сцене окажется битой.
+        /// </summary>
+        private static void AssignActionReference(Object target, string field,
+            InputActionAsset asset, string actionPath)
+        {
+            var action = asset.FindAction(actionPath);
+            if (action == null)
+            {
+                Debug.LogWarning($"[Прототип] Действие '{actionPath}' не найдено.");
+                return;
+            }
+
+            var assetPath = AssetDatabase.GetAssetPath(asset);
+            var reference = FindPersistedReference(assetPath, action.id);
+
+            if (reference == null)
+            {
+                Debug.LogWarning(
+                    $"[Прототип] В ассете нет сохранённой ссылки на '{actionPath}'. " +
+                    $"Назначьте поле '{field}' вручную на объекте Player.");
+                return;
+            }
+
+            AssignPrivateField(target, field, reference);
+        }
+
+        private static InputActionReference FindPersistedReference(string assetPath,
+            System.Guid actionId)
+        {
+            foreach (var candidate in AssetDatabase.LoadAllAssetsAtPath(assetPath))
+            {
+                if (candidate is InputActionReference reference
+                    && reference.action != null
+                    && reference.action.id == actionId)
+                {
+                    return reference;
+                }
+            }
+
+            return null;
+        }
+
+        private static void BuildCamera(GameObject player)
+        {
+            var cameraObject = new GameObject("Main Camera");
+            cameraObject.tag = "MainCamera";
+
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.fieldOfView = 60f;
+            camera.nearClipPlane = 0.1f;
+            camera.farClipPlane = 300f;
+
+            cameraObject.AddComponent<CinemachineBrain>();
+            cameraObject.transform.SetPositionAndRotation(
+                new Vector3(0f, 6f, -7f), Quaternion.Euler(22f, 0f, 0f));
+
+            // Цель слежения на уровне груди: камера смотрит не в ноги.
+            var lookTarget = new GameObject("CameraTarget");
+            lookTarget.transform.SetParent(player.transform);
+            lookTarget.transform.localPosition = new Vector3(0f, 1.4f, 0f);
+
+            var virtualCamera = new GameObject("ThirdPersonCamera")
+                .AddComponent<CinemachineCamera>();
+            virtualCamera.Follow = lookTarget.transform;
+            virtualCamera.LookAt = lookTarget.transform;
+
+            var follow = virtualCamera.gameObject.AddComponent<CinemachineFollow>();
+            follow.FollowOffset = new Vector3(0f, 2.6f, -5.5f);
+
+            virtualCamera.gameObject.AddComponent<CinemachineRotationComposer>();
+
+            // Камера не проходит сквозь стены (FR-011).
+            var deoccluder = virtualCamera.gameObject.AddComponent<CinemachineDeoccluder>();
+            deoccluder.CollideAgainst = ~0;
+            deoccluder.MinimumDistanceFromTarget = 0.5f;
+            deoccluder.AvoidObstacles.Enabled = true;
+            deoccluder.AvoidObstacles.CameraRadius = 0.3f;
+            deoccluder.AvoidObstacles.DistanceLimit = 8f;
+
+            AssignPrivateField(
+                player.GetComponent<PlayerInputBridge>(),
+                "cameraTransform",
+                cameraObject.transform);
+        }
+
+        private static void BuildLocationMarkers()
+        {
+            var root = new GameObject("Locations");
+            var material = CreateMaterial("Mat_Interactable", new Color(0.25f, 0.75f, 0.4f));
+
+            var kinds = new[]
+            {
+                (PrototypeContentBuilder.ApartmentLocationId, InteractionKind.Door,
+                    "prompt.enter_home"),
+                (PrototypeContentBuilder.CourierHubLocationId, InteractionKind.Terminal,
+                    "prompt.take_shift"),
+                (PrototypeContentBuilder.ShopLocationId, InteractionKind.Shop,
+                    "prompt.open_shop"),
+                (PrototypeContentBuilder.CafeLocationId, InteractionKind.Npc,
+                    "prompt.deliver_order")
+            };
+
+            foreach (var row in PrototypeContentBuilder.LocationTable)
+            {
+                var marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                marker.name = $"Interactable_{row.Id}";
+                marker.transform.SetParent(root.transform);
+                marker.transform.position = row.Position + new Vector3(0f, 0.9f, 0f);
+                marker.transform.localScale = new Vector3(1.4f, 1.8f, 1.4f);
+                marker.GetComponent<Renderer>().sharedMaterial = material;
+
+                var interactable = marker.AddComponent<LocationInteractable>();
+
+                var kind = InteractionKind.Terminal;
+                var prompt = "prompt.interact";
+                foreach (var candidate in kinds)
+                {
+                    if (candidate.Item1 != row.Id)
+                        continue;
+
+                    kind = candidate.Item2;
+                    prompt = candidate.Item3;
+                    break;
+                }
+
+                interactable.Configure(row.Id, kind, prompt);
+            }
+        }
+
+        private static void BuildBootstrap(GameSessionConfig config, ContentDatabase database)
+        {
+            var bootstrap = new GameObject("GameBootstrap");
+            var component = bootstrap.AddComponent<GameBootstrap>();
+
+            AssignPrivateField(component, "config", config);
+            AssignPrivateField(component, "content", database);
+            AssignPrivateField(component, "startNewGameOnAwake", true);
+
+            // Ассет должен быть уже записан на диск: ссылка на объект в памяти
+            // без пути превратится в fileID: 0 при сохранении сцены.
+            VerifyAssigned(component, "config", nameof(config));
+            VerifyAssigned(component, "content", nameof(database));
+        }
+
+        /// <summary>
+        /// Убеждается, что ссылка действительно записана. Молчаливое
+        /// fileID: 0 иначе всплывёт только при Play как неработающая сессия.
+        /// </summary>
+        private static void VerifyAssigned(Object target, string field, string label)
+        {
+            var so = new SerializedObject(target);
+            var property = so.FindProperty(field);
+
+            if (property != null && property.objectReferenceValue != null)
+                return;
+
+            Debug.LogError(
+                $"[Прототип] Поле '{field}' ({label}) осталось пустым в " +
+                $"{target.GetType().Name}. Назначьте ассет вручную в инспекторе.");
+        }
+
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// Материал URP. Создаётся один раз и переиспользуется, чтобы сцена
+        /// не тянула десяток одинаковых ассетов.
+        /// </summary>
+        private static Material CreateMaterial(string assetName, Color color)
+        {
+            const string folder = "Assets/_Project/Art/Prototype";
+            var path = $"{folder}/{assetName}.mat";
+
+            var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (existing != null)
+                return existing;
+
+            if (!AssetDatabase.IsValidFolder("Assets/_Project/Art"))
+                AssetDatabase.CreateFolder("Assets/_Project", "Art");
+
+            if (!AssetDatabase.IsValidFolder(folder))
+                AssetDatabase.CreateFolder("Assets/_Project/Art", "Prototype");
+
+            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null)
+            {
+                Debug.LogWarning("[Прототип] Шейдер URP/Lit не найден, взят стандартный.");
+                shader = Shader.Find("Standard");
+            }
+
+            var material = new Material(shader) { name = assetName };
+            material.SetColor("_BaseColor", color);
+            material.SetColor("_Color", color);
+
+            AssetDatabase.CreateAsset(material, path);
+            AssetDatabase.SaveAssets();
+
+            // Возвращаем ссылку, перечитанную по пути: только она надёжно
+            // сериализуется в сцену.
+            return AssetDatabase.LoadAssetAtPath<Material>(path);
+        }
+
+        /// <summary>
+        /// Пишет в приватное [SerializeField]-поле через SerializedObject:
+        /// поля намеренно закрыты, а сцену собирает редактор.
+        /// </summary>
+        private static void AssignPrivateField(Object target, string field, object value)
+        {
+            var so = new SerializedObject(target);
+            var property = so.FindProperty(field);
+
+            if (property == null)
+            {
+                Debug.LogWarning(
+                    $"[Прототип] Поле '{field}' не найдено в {target.GetType().Name}.");
+                return;
+            }
+
+            switch (value)
+            {
+                case bool b:
+                    property.boolValue = b;
+                    break;
+                case Object reference:
+                    property.objectReferenceValue = reference;
+                    break;
+                default:
+                    Debug.LogWarning(
+                        $"[Прототип] Тип {value?.GetType().Name} не поддерживается " +
+                        $"для поля '{field}'.");
+                    return;
+            }
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+    }
+}

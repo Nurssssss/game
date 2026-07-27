@@ -1,7 +1,11 @@
 {
     "name": "QonaevLife.World",
     "rootNamespace": "QonaevLife.World",
-    "references": ["QonaevLife.Core", "QonaevLife.Content"],
+    "references": [
+        "QonaevLife.Core",
+        "QonaevLife.Content",
+        "QonaevLife.Player"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
