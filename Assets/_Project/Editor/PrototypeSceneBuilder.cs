@@ -2,7 +2,10 @@ using System.IO;
 using QonaevLife.Bootstrap;
 using QonaevLife.Content;
 using QonaevLife.Player;
+using QonaevLife.UI;
 using QonaevLife.World;
+using TMPro;
+using UnityEngine.UI;
 using Unity.Cinemachine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -51,6 +54,7 @@ namespace QonaevLife.Editor
             var player = BuildPlayer();
             BuildCamera(player);
             BuildLocationMarkers();
+            BuildUserInterface();
             BuildBootstrap(config, database);
 
             if (!Directory.Exists(SceneFolder))
@@ -312,6 +316,126 @@ namespace QonaevLife.Editor
 
                 interactable.Configure(row.Id, kind, prompt);
             }
+        }
+
+        /// <summary>
+        /// Собирает HUD и подсказку взаимодействия (FR-090, FR-012).
+        /// Масштабируется по разрешению, чтобы текст оставался читаемым (FR-095).
+        /// </summary>
+        private static void BuildUserInterface()
+        {
+            var canvasObject = new GameObject("HUD_Canvas");
+            var canvas = canvasObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            var scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            canvasObject.AddComponent<GraphicRaycaster>();
+
+            var clockLabel = CreateLabel(canvasObject.transform, "ClockLabel",
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(0f, 1f),
+                pivot: new Vector2(0f, 1f), offset: new Vector2(32f, -28f),
+                size: new Vector2(560f, 44f), fontSize: 30f,
+                alignment: TextAlignmentOptions.TopLeft);
+
+            var moneyLabel = CreateLabel(canvasObject.transform, "MoneyLabel",
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(0f, 1f),
+                pivot: new Vector2(0f, 1f), offset: new Vector2(32f, -76f),
+                size: new Vector2(560f, 44f), fontSize: 30f,
+                alignment: TextAlignmentOptions.TopLeft);
+
+            var objectiveLabel = CreateLabel(canvasObject.transform, "ObjectiveLabel",
+                anchorMin: new Vector2(1f, 1f), anchorMax: new Vector2(1f, 1f),
+                pivot: new Vector2(1f, 1f), offset: new Vector2(-32f, -28f),
+                size: new Vector2(760f, 96f), fontSize: 26f,
+                alignment: TextAlignmentOptions.TopRight);
+
+            var notificationLabel = CreateLabel(canvasObject.transform, "NotificationLabel",
+                anchorMin: new Vector2(0.5f, 1f), anchorMax: new Vector2(0.5f, 1f),
+                pivot: new Vector2(0.5f, 1f), offset: new Vector2(0f, -150f),
+                size: new Vector2(1000f, 56f), fontSize: 32f,
+                alignment: TextAlignmentOptions.Center);
+            notificationLabel.color = new Color(1f, 0.9f, 0.45f);
+
+            var hud = canvasObject.AddComponent<HudView>();
+            hud.Configure(clockLabel, moneyLabel, objectiveLabel, notificationLabel);
+
+            // Подсказка взаимодействия: отдельный корень, чтобы её можно было
+            // скрывать целиком, не трогая остальной HUD.
+            var promptRoot = new GameObject("InteractionPrompt");
+            promptRoot.transform.SetParent(canvasObject.transform, worldPositionStays: false);
+
+            var promptRect = promptRoot.AddComponent<RectTransform>();
+            promptRect.anchorMin = new Vector2(0.5f, 0f);
+            promptRect.anchorMax = new Vector2(0.5f, 0f);
+            promptRect.pivot = new Vector2(0.5f, 0f);
+            promptRect.anchoredPosition = new Vector2(0f, 130f);
+            promptRect.sizeDelta = new Vector2(900f, 56f);
+
+            var promptLabel = CreateLabel(promptRoot.transform, "PromptLabel",
+                anchorMin: Vector2.zero, anchorMax: Vector2.one,
+                pivot: new Vector2(0.5f, 0.5f), offset: Vector2.zero,
+                size: Vector2.zero, fontSize: 30f,
+                alignment: TextAlignmentOptions.Center,
+                stretch: true);
+
+            var prompt = canvasObject.AddComponent<InteractionPromptView>();
+            prompt.Configure(promptRoot, promptLabel);
+
+            promptRoot.SetActive(false);
+        }
+
+        private static TMP_Text CreateLabel(Transform parent, string name,
+            Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 offset,
+            Vector2 size, float fontSize, TextAlignmentOptions alignment,
+            bool stretch = false)
+        {
+            // Подложка — родитель текста: так она гарантированно рисуется
+            // раньше и не перекрывает буквы.
+            var backdropObject = new GameObject($"{name}_Backdrop");
+            backdropObject.transform.SetParent(parent, worldPositionStays: false);
+
+            var backdrop = backdropObject.AddComponent<Image>();
+            backdrop.color = new Color(0f, 0f, 0f, 0.45f);
+            backdrop.raycastTarget = false;
+
+            var labelObject = new GameObject(name);
+            labelObject.transform.SetParent(backdropObject.transform, worldPositionStays: false);
+
+            var label = labelObject.AddComponent<TextMeshProUGUI>();
+            label.fontSize = fontSize;
+            label.alignment = alignment;
+            label.color = Color.white;
+            label.text = string.Empty;
+            label.enableWordWrapping = true;
+
+            // Позиционируется подложка; текст растягивается внутри неё.
+            var backdropRect = backdrop.rectTransform;
+            backdropRect.anchorMin = anchorMin;
+            backdropRect.anchorMax = anchorMax;
+            backdropRect.pivot = pivot;
+
+            if (stretch)
+            {
+                backdropRect.offsetMin = Vector2.zero;
+                backdropRect.offsetMax = Vector2.zero;
+            }
+            else
+            {
+                backdropRect.anchoredPosition = offset;
+                backdropRect.sizeDelta = size;
+            }
+
+            var rect = label.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(12f, 4f);
+            rect.offsetMax = new Vector2(-12f, -4f);
+
+            return label;
         }
 
         private static void BuildBootstrap(GameSessionConfig config, ContentDatabase database)

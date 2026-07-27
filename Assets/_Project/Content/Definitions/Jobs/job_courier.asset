@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9b7c5d7f8a054ab8883cc132daead85, type: 3}
+  m_Name: job_courier
+  m_EditorClassIdentifier: QonaevLife.Content::QonaevLife.Content.JobDefinition
+  id: job_courier
+  editorNote: 
+  displayNameKey: job.courier
+  descriptionKey: job.courier.description
+  hubLocationId: loc_courier_hub
+  availablePhases:
+  - Morning
+  - Day
+  - Evening
+  skillRequirements: []
+  basePayout: 800
+  onTimeBonus: 200
+  failurePenalty: 150
+  stages:
+  - stageId: stage_pickup
+    objectiveKey: job.courier.pickup
+    locationId: loc_courier_hub
+    timeLimitMinutes: 0
+    stagePayout: 0
+  - stageId: stage_deliver
+    objectiveKey: job.courier.deliver
+    locationId: loc_cafe_01
+    timeLimitMinutes: 90
+    stagePayout: 0
+  primarySkillId: skill_work
+  skillExperiencePerShift: 10
+  languageExperiencePerShift: 15

@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2a215de1120e4c1280f5f630c9792e0, type: 3}
+  m_Name: GameSessionConfig
+  m_EditorClassIdentifier: QonaevLife.Bootstrap::QonaevLife.Bootstrap.GameSessionConfig
+  clock:
+    minutesPerRealSecond: 60
+    morningStartHour: 6
+    dayStartHour: 11
+    eveningStartHour: 18
+    nightStartHour: 23
+    startHour: 8
+  weather:
+    minDurationMinutes: 120
+    maxDurationMinutes: 480
+  weatherSeed: 12345
+  startingCapital: 5000
+  language:
+    experiencePerLevel: 100
+    maxLevel: 10
+    correctAnswersPerStage: 2
+    hideTranslationFromStage: 3
+  needs:
+  - needId: hunger
+    decayPerGameMinute: 0.05
+    criticalThreshold: 15
+    startValue: 80
+  - needId: energy
+    decayPerGameMinute: 0.04
+    criticalThreshold: 15
+    startValue: 90
+  - needId: fatigue
+    decayPerGameMinute: 0.03
+    criticalThreshold: 10
+    startValue: 100
+  - needId: mood
+    decayPerGameMinute: 0.02
+    criticalThreshold: 20
+    startValue: 70
+  saveSlotCount: 3
+  saveFolderName: Saves

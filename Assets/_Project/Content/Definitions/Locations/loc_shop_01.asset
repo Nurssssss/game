@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48f3c1c4301e040209a3e3729d6f37bc, type: 3}
+  m_Name: loc_shop_01
+  m_EditorClassIdentifier: QonaevLife.Content::QonaevLife.Content.LocationDefinition
+  id: loc_shop_01
+  editorNote: 
+  displayNameKey: loc.shop
+  kind: 1
+  sectorId: sector_center
+  markerPosition: {x: -14, y: 0, z: 12}
+  isInterior: 0
+  interiorAddressableKey: 
+  alwaysOpen: 0
+  openHour: 8
+  closeHour: 22
+  discoveredFromStart: 1
+  isTaxiDestination: 1

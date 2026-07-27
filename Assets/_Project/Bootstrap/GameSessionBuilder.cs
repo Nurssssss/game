@@ -140,6 +140,11 @@ namespace QonaevLife.Bootstrap
             var dialogue = new DialogueService(content, eventBus, language);
             var jobs = new JobShiftService(content, eventBus, clock, wallet, locations);
 
+            // Координатор запускает смену по взаимодействию с пунктом выдачи.
+            // ID берутся из конфига, а не из кода (п. 10 ТЗ).
+            var coordinator = new CourierShiftCoordinator(
+                eventBus, jobs, config.PrimaryJobId, config.PrimaryJobHubLocationId);
+
             registry.Register<IEventBus>(eventBus);
             registry.Register<IGameClock>(clock);
             registry.Register<ISaveService>(saveService);
@@ -153,6 +158,7 @@ namespace QonaevLife.Bootstrap
             registry.Register(locations);
             registry.Register(dialogue);
             registry.Register(jobs);
+            registry.Register(coordinator);
 
             registry.InitializeAll();
 

@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5318a0fa1a814f3689822d7ee22811f, type: 3}
+  m_Name: npc_dispatcher
+  m_EditorClassIdentifier: QonaevLife.Content::QonaevLife.Content.NpcDefinition
+  id: npc_dispatcher
+  editorNote: 
+  displayNameKey: npc.dispatcher
+  ageCategory: 2
+  professionKey: profession.dispatcher
+  homeLocationId: loc_apartment_01
+  workLocationId: loc_courier_hub
+  schedule:
+  - entryId: sched_morning
+    dayPhase: Morning
+    locationId: loc_courier_hub
+    behaviour: work
+    priority: 0
+  - entryId: sched_day
+    dayPhase: Day
+    locationId: loc_courier_hub
+    behaviour: work
+    priority: 0
+  - entryId: sched_evening
+    dayPhase: Evening
+    locationId: loc_cafe_01
+    behaviour: idle
+    priority: 0
+  - entryId: sched_night
+    dayPhase: Night
+    locationId: loc_apartment_01
+    behaviour: sleep
+    priority: 0
+  baseMood: 0.2
+  initialTrust: 0.5
+  rootDialogueId: dlg_dispatcher_greeting
+  prefersKazakh: 1
+  portrait: {fileID: 0}
+  addressablePrefabKey: npc_prefab_npc_dispatcher

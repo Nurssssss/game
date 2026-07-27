@@ -18,7 +18,8 @@
         "QonaevLife.Audio",
         "QonaevLife.Bootstrap",
         "Unity.InputSystem",
-        "Unity.Cinemachine"
+        "Unity.Cinemachine",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

@@ -30,6 +30,13 @@ namespace QonaevLife.Bootstrap
         [SerializeField] [Tooltip("Стартовый капитал новой игры (FR-002).")] [Min(0)]
         private long startingCapital = 5000;
 
+        [Header("Профессия MVP")]
+        [SerializeField] [Tooltip("ID работы, доступной в вертикальном срезе (FR-070).")]
+        private string primaryJobId = "job_courier";
+
+        [SerializeField] [Tooltip("ID локации, где выдаётся смена.")]
+        private string primaryJobHubLocationId = "loc_courier_hub";
+
         [Header("Язык")]
         [SerializeField] private LanguageProgressSettings language = LanguageProgressSettings.Default;
 
@@ -79,6 +86,8 @@ namespace QonaevLife.Bootstrap
         public WeatherSettings Weather => weather;
         public int WeatherSeed => weatherSeed;
         public long StartingCapital => startingCapital;
+        public string PrimaryJobId => primaryJobId;
+        public string PrimaryJobHubLocationId => primaryJobHubLocationId;
         public LanguageProgressSettings Language => language;
         public IReadOnlyList<NeedSettings> Needs => needs;
         public int SaveSlotCount => saveSlotCount;
@@ -136,6 +145,18 @@ namespace QonaevLife.Bootstrap
             if (string.IsNullOrWhiteSpace(saveFolderName))
             {
                 error = "Не задана папка сохранений.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(primaryJobId))
+            {
+                error = "Не задан ID профессии MVP (FR-070).";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(primaryJobHubLocationId))
+            {
+                error = "Не задана локация выдачи смены.";
                 return false;
             }
 

@@ -79,6 +79,22 @@ namespace QonaevLife.Bootstrap
             {
                 interactable.Bind(_session.Locations);
             }
+
+            // Текст интерфейса прототипа. Полноценный пакет локализации
+            // подключается отдельно (FR-094).
+            var localizedText = UI.DictionaryLocalizedText.CreateRussianPrototype();
+
+            foreach (var prompt in FindObjectsByType<UI.InteractionPromptView>(
+                         FindObjectsSortMode.None))
+            {
+                prompt.Bind(_session.EventBus, localizedText);
+            }
+
+            foreach (var hud in FindObjectsByType<UI.HudView>(FindObjectsSortMode.None))
+            {
+                hud.Bind(_session.EventBus, _session.Clock, _session.Wallet,
+                    _session.Jobs, localizedText);
+            }
         }
 
         private void Update()
