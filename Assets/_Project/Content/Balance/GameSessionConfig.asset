@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GameSessionConfig
   m_EditorClassIdentifier: QonaevLife.Bootstrap::QonaevLife.Bootstrap.GameSessionConfig
   clock:
-    minutesPerRealSecond: 60
+    minutesPerRealSecond: 1
     morningStartHour: 6
     dayStartHour: 11
     eveningStartHour: 18

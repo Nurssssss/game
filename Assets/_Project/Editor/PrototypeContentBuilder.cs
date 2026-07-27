@@ -81,9 +81,10 @@ namespace QonaevLife.Editor
 
             var so = new SerializedObject(config);
 
-            // Ускоренное время: сутки проходят за 24 реальные минуты, чтобы
-            // фазы суток и расписания NPC можно было проверить за один сеанс.
-            so.FindProperty("clock").FindPropertyRelative("minutesPerRealSecond").floatValue = 60f;
+            // Одна игровая минута за реальную секунду: игровые сутки проходят
+            // за 24 реальные минуты. Достаточно медленно, чтобы успевать
+            // выполнить смену, и достаточно быстро, чтобы увидеть смену фаз.
+            so.FindProperty("clock").FindPropertyRelative("minutesPerRealSecond").floatValue = 1f;
             so.FindProperty("startingCapital").longValue = 5000;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(config);
