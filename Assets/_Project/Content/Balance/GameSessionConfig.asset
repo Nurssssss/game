@@ -24,6 +24,8 @@ MonoBehaviour:
     maxDurationMinutes: 480
   weatherSeed: 12345
   startingCapital: 5000
+  primaryJobId: job_courier
+  primaryJobHubLocationId: loc_courier_hub
   language:
     experiencePerLevel: 100
     maxLevel: 10
