@@ -12,6 +12,9 @@ namespace QonaevLife.Bootstrap
         [SerializeField] [Tooltip("Балансовые настройки сессии.")]
         private GameSessionConfig config;
 
+        [SerializeField] [Tooltip("База контента: локации, NPC, диалоги, работы, слова.")]
+        private Content.ContentDatabase content;
+
         [SerializeField] [Tooltip("Начислять стартовый капитал сразу при запуске (для отладки).")]
         private bool startNewGameOnAwake = true;
 
@@ -28,11 +31,18 @@ namespace QonaevLife.Bootstrap
                 return;
             }
 
+            if (content == null)
+            {
+                Debug.LogError("[Bootstrap] Не назначена ContentDatabase — сессия не запущена.");
+                return;
+            }
+
             DontDestroyOnLoad(gameObject);
 
             try
             {
-                _session = GameSessionBuilder.Build(config, Application.persistentDataPath);
+                _session = GameSessionBuilder.Build(
+                    config, content, Application.persistentDataPath);
             }
             catch (System.Exception exception)
             {

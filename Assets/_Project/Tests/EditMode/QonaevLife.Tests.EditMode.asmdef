@@ -16,6 +16,7 @@
         "QonaevLife.Property",
         "QonaevLife.UI",
         "QonaevLife.Audio",
+        "QonaevLife.Bootstrap",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

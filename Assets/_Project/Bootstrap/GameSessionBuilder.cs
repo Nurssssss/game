@@ -1,7 +1,10 @@
 using System;
 using System.IO;
+using QonaevLife.Content;
 using QonaevLife.Core;
+using QonaevLife.Dialogue;
 using QonaevLife.Economy;
+using QonaevLife.Jobs;
 using QonaevLife.Language;
 using QonaevLife.Player;
 using QonaevLife.World;
@@ -17,7 +20,8 @@ namespace QonaevLife.Bootstrap
     {
         public GameSession(ServiceRegistry registry, EventBus eventBus, GameClock clock,
             WeatherService weather, WalletService wallet, NeedsService needs,
-            LanguageProgressService language, ISaveService saveService)
+            LanguageProgressService language, ISaveService saveService,
+            LocationRegistry locations, DialogueService dialogue, JobShiftService jobs)
         {
             Registry = registry;
             EventBus = eventBus;
@@ -27,6 +31,9 @@ namespace QonaevLife.Bootstrap
             Needs = needs;
             Language = language;
             SaveService = saveService;
+            Locations = locations;
+            Dialogue = dialogue;
+            Jobs = jobs;
         }
 
         public ServiceRegistry Registry { get; }
@@ -37,6 +44,9 @@ namespace QonaevLife.Bootstrap
         public NeedsService Needs { get; }
         public LanguageProgressService Language { get; }
         public ISaveService SaveService { get; }
+        public LocationRegistry Locations { get; }
+        public DialogueService Dialogue { get; }
+        public JobShiftService Jobs { get; }
 
         /// <summary>Продвигает время сессии на прошедший кадр.</summary>
         public void Tick(float realDeltaSeconds)
@@ -49,6 +59,9 @@ namespace QonaevLife.Bootstrap
             Clock.Tick(realDeltaSeconds);
             Weather.AdvanceMinutes(gameMinutes);
             Needs.AdvanceMinutes(gameMinutes);
+
+            // После продвижения времени: смена могла просрочить лимит этапа.
+            Jobs.Tick();
         }
 
         /// <summary>Собирает текущее состояние сессии в сохранение (FR-003).</summary>
@@ -60,6 +73,7 @@ namespace QonaevLife.Bootstrap
             data.world.minutesOfDay = Clock.TimeOfDay.TotalMinutes;
 
             Weather.CaptureState(data.world);
+            Locations.CaptureState(data.world);
             Wallet.CaptureState(data.economy);
             Needs.CaptureState(data.player);
             Language.CaptureState(data.language);
@@ -75,6 +89,7 @@ namespace QonaevLife.Bootstrap
 
             Clock.RestoreState(data.world.day, data.world.minutesOfDay);
             Weather.RestoreState(data.world);
+            Locations.RestoreState(data.world);
             Wallet.RestoreState(data.economy);
             Needs.RestoreState(data.player);
             Language.RestoreState(data.language);
@@ -94,10 +109,14 @@ namespace QonaevLife.Bootstrap
         /// Создаёт сессию. <paramref name="persistentDataPath"/> передаётся
         /// параметром, чтобы сборку можно было проверить вне Unity-плеера.
         /// </summary>
-        public static GameSession Build(GameSessionConfig config, string persistentDataPath)
+        public static GameSession Build(GameSessionConfig config, ContentDatabase content,
+            string persistentDataPath)
         {
             if (config == null)
                 throw new ArgumentNullException(nameof(config));
+
+            if (content == null)
+                throw new ArgumentNullException(nameof(content));
 
             if (!config.TryValidate(out var error))
                 throw new InvalidOperationException($"Некорректный конфиг сессии: {error}");
@@ -117,6 +136,10 @@ namespace QonaevLife.Bootstrap
             var saveDirectory = Path.Combine(persistentDataPath, config.SaveFolderName);
             var saveService = new JsonFileSaveService(saveDirectory, config.SaveSlotCount);
 
+            var locations = new LocationRegistry(content, eventBus, clock);
+            var dialogue = new DialogueService(content, eventBus, language);
+            var jobs = new JobShiftService(content, eventBus, clock, wallet, locations);
+
             registry.Register<IEventBus>(eventBus);
             registry.Register<IGameClock>(clock);
             registry.Register<ISaveService>(saveService);
@@ -127,11 +150,15 @@ namespace QonaevLife.Bootstrap
             // потребители получают их из GameSession, а не через поиск синглтона.
             registry.Register(weather);
             registry.Register(needs);
+            registry.Register(locations);
+            registry.Register(dialogue);
+            registry.Register(jobs);
 
             registry.InitializeAll();
 
             return new GameSession(
-                registry, eventBus, clock, weather, wallet, needs, language, saveService);
+                registry, eventBus, clock, weather, wallet, needs, language, saveService,
+                locations, dialogue, jobs);
         }
 
         /// <summary>
