@@ -1,0 +1,36 @@
+{
+    "name": "QonaevLife.Tests.PlayMode",
+    "rootNamespace": "QonaevLife.Tests.PlayMode",
+    "references": [
+        "QonaevLife.Core",
+        "QonaevLife.Content",
+        "QonaevLife.Player",
+        "QonaevLife.World",
+        "QonaevLife.Npc",
+        "QonaevLife.Dialogue",
+        "QonaevLife.Language",
+        "QonaevLife.Economy",
+        "QonaevLife.Jobs",
+        "QonaevLife.Quests",
+        "QonaevLife.Transport",
+        "QonaevLife.Property",
+        "QonaevLife.UI",
+        "QonaevLife.Audio",
+        "QonaevLife.Bootstrap",
+        "Unity.InputSystem",
+        "UnityEngine.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

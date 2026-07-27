@@ -1,0 +1,14 @@
+{
+    "name": "QonaevLife.Transport",
+    "rootNamespace": "QonaevLife.Transport",
+    "references": ["QonaevLife.Core", "QonaevLife.Content", "QonaevLife.Economy", "QonaevLife.World", "Unity.InputSystem"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

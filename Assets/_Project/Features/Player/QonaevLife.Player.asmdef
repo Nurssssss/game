@@ -1,0 +1,14 @@
+{
+    "name": "QonaevLife.Player",
+    "rootNamespace": "QonaevLife.Player",
+    "references": ["QonaevLife.Core", "QonaevLife.Content", "Unity.InputSystem"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

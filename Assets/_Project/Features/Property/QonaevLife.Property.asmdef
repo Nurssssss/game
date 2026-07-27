@@ -1,0 +1,14 @@
+{
+    "name": "QonaevLife.Property",
+    "rootNamespace": "QonaevLife.Property",
+    "references": ["QonaevLife.Core", "QonaevLife.Content", "QonaevLife.Economy"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

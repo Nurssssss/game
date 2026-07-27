@@ -1,0 +1,14 @@
+{
+    "name": "QonaevLife.Npc",
+    "rootNamespace": "QonaevLife.Npc",
+    "references": ["QonaevLife.Core", "QonaevLife.Content", "QonaevLife.World"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

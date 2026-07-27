@@ -1,0 +1,14 @@
+{
+    "name": "QonaevLife.Jobs",
+    "rootNamespace": "QonaevLife.Jobs",
+    "references": ["QonaevLife.Core", "QonaevLife.Content", "QonaevLife.Economy", "QonaevLife.World", "QonaevLife.Quests", "QonaevLife.Player"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

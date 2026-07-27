@@ -1,0 +1,164 @@
+using System;
+using System.IO;
+using QonaevLife.Core;
+using QonaevLife.Economy;
+using QonaevLife.Language;
+using QonaevLife.Player;
+using QonaevLife.World;
+
+namespace QonaevLife.Bootstrap
+{
+    /// <summary>
+    /// Собранная игровая сессия. Держит конкретные реализации, чтобы Bootstrap
+    /// мог продвигать время и записывать состояние, не обращаясь к реестру
+    /// за каждым сервисом.
+    /// </summary>
+    public sealed class GameSession
+    {
+        public GameSession(ServiceRegistry registry, EventBus eventBus, GameClock clock,
+            WeatherService weather, WalletService wallet, NeedsService needs,
+            LanguageProgressService language, ISaveService saveService)
+        {
+            Registry = registry;
+            EventBus = eventBus;
+            Clock = clock;
+            Weather = weather;
+            Wallet = wallet;
+            Needs = needs;
+            Language = language;
+            SaveService = saveService;
+        }
+
+        public ServiceRegistry Registry { get; }
+        public EventBus EventBus { get; }
+        public GameClock Clock { get; }
+        public WeatherService Weather { get; }
+        public WalletService Wallet { get; }
+        public NeedsService Needs { get; }
+        public LanguageProgressService Language { get; }
+        public ISaveService SaveService { get; }
+
+        /// <summary>Продвигает время сессии на прошедший кадр.</summary>
+        public void Tick(float realDeltaSeconds)
+        {
+            if (Clock.IsPaused || realDeltaSeconds <= 0f)
+                return;
+
+            var gameMinutes = realDeltaSeconds * Clock.MinutesPerRealSecond;
+
+            Clock.Tick(realDeltaSeconds);
+            Weather.AdvanceMinutes(gameMinutes);
+            Needs.AdvanceMinutes(gameMinutes);
+        }
+
+        /// <summary>Собирает текущее состояние сессии в сохранение (FR-003).</summary>
+        public SaveData CaptureSave(string profileName)
+        {
+            var data = new SaveData { ProfileName = profileName };
+
+            data.world.day = Clock.Day;
+            data.world.minutesOfDay = Clock.TimeOfDay.TotalMinutes;
+
+            Weather.CaptureState(data.world);
+            Wallet.CaptureState(data.economy);
+            Needs.CaptureState(data.player);
+            Language.CaptureState(data.language);
+
+            return data;
+        }
+
+        /// <summary>Восстанавливает состояние сессии из сохранения (FR-003, FR-023).</summary>
+        public void RestoreSave(SaveData data)
+        {
+            if (data == null)
+                throw new ArgumentNullException(nameof(data));
+
+            Clock.RestoreState(data.world.day, data.world.minutesOfDay);
+            Weather.RestoreState(data.world);
+            Wallet.RestoreState(data.economy);
+            Needs.RestoreState(data.player);
+            Language.RestoreState(data.language);
+        }
+
+        public void Shutdown() => Registry.ShutdownAll();
+    }
+
+    /// <summary>
+    /// Композиционный корень (п. 4.2 ТЗ). Единственное место, где создаются
+    /// конкретные реализации сервисов и связываются их зависимости.
+    /// Не хранит игровое состояние и не содержит игровой логики.
+    /// </summary>
+    public static class GameSessionBuilder
+    {
+        /// <summary>
+        /// Создаёт сессию. <paramref name="persistentDataPath"/> передаётся
+        /// параметром, чтобы сборку можно было проверить вне Unity-плеера.
+        /// </summary>
+        public static GameSession Build(GameSessionConfig config, string persistentDataPath)
+        {
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
+
+            if (!config.TryValidate(out var error))
+                throw new InvalidOperationException($"Некорректный конфиг сессии: {error}");
+
+            if (string.IsNullOrWhiteSpace(persistentDataPath))
+                throw new ArgumentException("Не задан путь сохранений.", nameof(persistentDataPath));
+
+            var registry = new ServiceRegistry();
+
+            var eventBus = new EventBus();
+            var clock = new GameClock(config.Clock);
+            var weather = new WeatherService(eventBus, config.Weather, config.WeatherSeed);
+            var wallet = new WalletService(clock, eventBus);
+            var needs = new NeedsService(eventBus, config.Needs);
+            var language = new LanguageProgressService(eventBus, config.Language);
+
+            var saveDirectory = Path.Combine(persistentDataPath, config.SaveFolderName);
+            var saveService = new JsonFileSaveService(saveDirectory, config.SaveSlotCount);
+
+            registry.Register<IEventBus>(eventBus);
+            registry.Register<IGameClock>(clock);
+            registry.Register<ISaveService>(saveService);
+            registry.Register<IWalletService>(wallet);
+            registry.Register<ILanguageProgressService>(language);
+
+            // Конкретные типы регистрируются там, где контракт ещё не выделен;
+            // потребители получают их из GameSession, а не через поиск синглтона.
+            registry.Register(weather);
+            registry.Register(needs);
+
+            registry.InitializeAll();
+
+            return new GameSession(
+                registry, eventBus, clock, weather, wallet, needs, language, saveService);
+        }
+
+        /// <summary>
+        /// Начисляет стартовый капитал новой игры через журнал транзакций,
+        /// чтобы у денег всегда была причина и источник (FR-050, FR-075).
+        /// </summary>
+        public static void ApplyNewGameState(GameSession session, GameSessionConfig config)
+        {
+            if (session == null)
+                throw new ArgumentNullException(nameof(session));
+
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
+
+            if (config.StartingCapital <= 0)
+                return;
+
+            var result = session.Wallet.TryApply(new TransactionRequest(
+                config.StartingCapital,
+                TransactionReason.StartingCapital,
+                sourceId: "new_game"));
+
+            if (!result.Applied)
+            {
+                throw new InvalidOperationException(
+                    $"Не удалось начислить стартовый капитал: {result.Status}.");
+            }
+        }
+    }
+}

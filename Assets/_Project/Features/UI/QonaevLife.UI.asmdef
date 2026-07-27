@@ -1,0 +1,30 @@
+{
+    "name": "QonaevLife.UI",
+    "rootNamespace": "QonaevLife.UI",
+    "references": [
+        "QonaevLife.Core",
+        "QonaevLife.Content",
+        "QonaevLife.Player",
+        "QonaevLife.World",
+        "QonaevLife.Npc",
+        "QonaevLife.Dialogue",
+        "QonaevLife.Language",
+        "QonaevLife.Economy",
+        "QonaevLife.Jobs",
+        "QonaevLife.Quests",
+        "QonaevLife.Transport",
+        "QonaevLife.Property",
+        "QonaevLife.Audio",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,14 @@
+{
+    "name": "QonaevLife.Quests",
+    "rootNamespace": "QonaevLife.Quests",
+    "references": ["QonaevLife.Core", "QonaevLife.Content", "QonaevLife.World", "QonaevLife.Economy"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

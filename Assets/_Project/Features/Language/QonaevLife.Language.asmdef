@@ -1,0 +1,14 @@
+{
+    "name": "QonaevLife.Language",
+    "rootNamespace": "QonaevLife.Language",
+    "references": ["QonaevLife.Core", "QonaevLife.Content"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

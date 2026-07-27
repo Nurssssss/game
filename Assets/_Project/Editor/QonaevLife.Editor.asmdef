@@ -1,0 +1,14 @@
+{
+    "name": "QonaevLife.Editor",
+    "rootNamespace": "QonaevLife.Editor",
+    "references": ["QonaevLife.Core", "QonaevLife.Content", "QonaevLife.Player", "QonaevLife.World", "QonaevLife.Npc", "QonaevLife.Dialogue", "QonaevLife.Language", "QonaevLife.Economy", "QonaevLife.Jobs", "QonaevLife.Quests", "QonaevLife.Transport", "QonaevLife.Property", "QonaevLife.UI", "QonaevLife.Audio"],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
