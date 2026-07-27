@@ -11,6 +11,8 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace QonaevLife.Editor
 {
@@ -75,51 +77,100 @@ namespace QonaevLife.Editor
             var light = sun.AddComponent<Light>();
             light.type = LightType.Directional;
             light.color = new Color(1f, 0.96f, 0.9f);
-            light.intensity = 1.1f;
+            light.intensity = 1.25f;
             light.shadows = LightShadows.Soft;
+            light.shadowStrength = 0.85f;
             sun.transform.rotation = Quaternion.Euler(48f, 35f, 0f);
+
+            // Цвет и угол солнца ведёт суточный цикл: рассвет тёплый,
+            // сумерки синие, ночью включаются фонари (FR-021).
+            var cycle = sun.AddComponent<DayNightLighting>();
+            cycle.Configure(light);
+
+            BuildPostProcessing();
+        }
+
+        /// <summary>
+        /// Постобработка URP: тонмаппинг, bloom, виньетка и цветокоррекция.
+        /// Профиль сохраняется ассетом, поэтому его можно править художником
+        /// и отключать через профили качества (п. 8.4 ТЗ).
+        /// </summary>
+        private static void BuildPostProcessing()
+        {
+            var profilePath = "Assets/_Project/Art/Prototype/PrototypeVolumeProfile.asset";
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(profilePath);
+
+            if (profile == null)
+            {
+                if (!AssetDatabase.IsValidFolder("Assets/_Project/Art"))
+                    AssetDatabase.CreateFolder("Assets/_Project", "Art");
+
+                if (!AssetDatabase.IsValidFolder("Assets/_Project/Art/Prototype"))
+                    AssetDatabase.CreateFolder("Assets/_Project/Art", "Prototype");
+
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                AssetDatabase.CreateAsset(profile, profilePath);
+
+                // ACES-тонмаппинг: убирает «выжигание» светлых участков и даёт
+                // кинематографичный контраст вместо плоской картинки.
+                var tonemapping = profile.Add<Tonemapping>(overrides: true);
+                tonemapping.mode.overrideState = true;
+                tonemapping.mode.value = TonemappingMode.ACES;
+
+                var bloom = profile.Add<Bloom>(overrides: true);
+                bloom.intensity.overrideState = true;
+                bloom.intensity.value = 0.85f;
+                bloom.threshold.overrideState = true;
+                bloom.threshold.value = 1.05f;
+                bloom.scatter.overrideState = true;
+                bloom.scatter.value = 0.65f;
+
+                var colorAdjustments = profile.Add<ColorAdjustments>(overrides: true);
+                colorAdjustments.postExposure.overrideState = true;
+                colorAdjustments.postExposure.value = 0.15f;
+                colorAdjustments.contrast.overrideState = true;
+                colorAdjustments.contrast.value = 12f;
+                colorAdjustments.saturation.overrideState = true;
+                colorAdjustments.saturation.value = 8f;
+
+                var vignette = profile.Add<Vignette>(overrides: true);
+                vignette.intensity.overrideState = true;
+                vignette.intensity.value = 0.28f;
+                vignette.smoothness.overrideState = true;
+                vignette.smoothness.value = 0.4f;
+
+                // Мягкая глубина резкости на дальнем плане добавляет объём,
+                // не мешая читать интерфейс.
+                var filmGrain = profile.Add<FilmGrain>(overrides: true);
+                filmGrain.intensity.overrideState = true;
+                filmGrain.intensity.value = 0.15f;
+
+                AssetDatabase.SaveAssets();
+                profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(profilePath);
+            }
+
+            var volumeObject = new GameObject("Global Volume");
+            var volume = volumeObject.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 0f;
+            volume.sharedProfile = profile;
         }
 
         private static void BuildGround()
         {
             var root = new GameObject("World");
 
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
-            ground.transform.SetParent(root.transform);
-            ground.transform.localScale = new Vector3(8f, 1f, 8f); // 80 × 80 м
-            ground.GetComponent<Renderer>().sharedMaterial = CreateMaterial(
-                "Mat_Ground", new Color(0.32f, 0.33f, 0.35f));
-
-            // Несколько кварталов серого блок-аута, чтобы камера и коллизии
-            // проверялись в узких местах, а не на пустой плоскости.
-            var blocks = new (Vector3 Position, Vector3 Size)[]
-            {
-                (new Vector3(-10f, 3f, 20f), new Vector3(14f, 6f, 10f)),
-                (new Vector3(12f, 4f, 18f), new Vector3(10f, 8f, 12f)),
-                (new Vector3(24f, 3f, -4f), new Vector3(8f, 6f, 18f)),
-                (new Vector3(-22f, 4f, -6f), new Vector3(10f, 8f, 14f)),
-                (new Vector3(2f, 2.5f, -26f), new Vector3(18f, 5f, 8f))
-            };
-
-            var wallMaterial = CreateMaterial("Mat_Building", new Color(0.55f, 0.54f, 0.5f));
-
-            for (var i = 0; i < blocks.Length; i++)
-            {
-                var block = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                block.name = $"Building_{i:D2}";
-                block.transform.SetParent(root.transform);
-                block.transform.position = blocks[i].Position;
-                block.transform.localScale = blocks[i].Size;
-                block.GetComponent<Renderer>().sharedMaterial = wallMaterial;
-                block.isStatic = true;
-            }
+            // Кварталы, дороги, тротуары, фонари и озеленение с процедурными
+            // текстурами. Геометрия остаётся примитивной — это блок-аут P1.
+            CityBlockoutBuilder.Build(root.transform);
         }
 
         private static GameObject BuildPlayer()
         {
             var player = new GameObject("Player");
-            player.transform.position = new Vector3(0f, 1.1f, 0f);
+
+            // Старт на тротуаре у дома, а не посреди перекрёстка.
+            player.transform.position = new Vector3(-9f, 1.1f, -4f);
 
             var controller = player.AddComponent<CharacterController>();
             controller.height = 1.8f;

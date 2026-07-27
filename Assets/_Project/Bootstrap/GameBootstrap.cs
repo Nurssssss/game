@@ -84,6 +84,12 @@ namespace QonaevLife.Bootstrap
             // подключается отдельно (FR-094).
             var localizedText = UI.DictionaryLocalizedText.CreateRussianPrototype();
 
+            foreach (var lighting in FindObjectsByType<World.DayNightLighting>(
+                         FindObjectsSortMode.None))
+            {
+                lighting.Bind(_session.Clock);
+            }
+
             foreach (var prompt in FindObjectsByType<UI.InteractionPromptView>(
                          FindObjectsSortMode.None))
             {
