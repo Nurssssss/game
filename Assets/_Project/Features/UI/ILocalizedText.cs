@@ -53,6 +53,76 @@ namespace QonaevLife.UI
         public static DictionaryLocalizedText CreateRussianPrototype()
             => new("ru", new Dictionary<string, string>
             {
+                // Главное меню (FR-001)
+                ["menu.title"] = "Qonaev Life",
+                ["menu.new_game"] = "Новая игра",
+                ["menu.continue"] = "Продолжить",
+                ["menu.load"] = "Загрузить",
+                ["menu.settings"] = "Настройки",
+                ["menu.credits"] = "Титры",
+                ["menu.quit"] = "Выход",
+                ["menu.version"] = "Версия",
+                ["menu.hint_new"] = "Начните новую игру, чтобы выйти на улицы Конаева",
+                ["menu.hint_continue"] = "Продолжите с последнего сохранения",
+
+                // Слоты сохранения (FR-002 — FR-004)
+                ["slots.title_load"] = "Загрузить игру",
+                ["slots.title_save"] = "Сохранить игру",
+                ["slot.empty"] = "Пустой слот",
+                ["slot.valid"] = "Сохранение",
+                ["slot.corrupted"] = "Файл повреждён — загрузка невозможна",
+                ["slot.unsupported"] = "Сохранение новой версии игры",
+                ["slot.unknown"] = "Неизвестное состояние",
+                ["slot.no_name"] = "Без имени",
+
+                // Настройки (FR-093)
+                ["settings.title"] = "Настройки",
+
+                // Телефон (FR-091)
+                ["phone.tab.Map"] = "Карта",
+                ["phone.tab.Tasks"] = "Задания",
+                ["phone.tab.Dictionary"] = "Словарь",
+                ["phone.tab.Finance"] = "Финансы",
+                ["phone.tab.Contacts"] = "Контакты",
+                ["phone.tab.Transport"] = "Транспорт",
+                ["phone.tasks_empty"] = "Активных заданий нет. Возьмите смену у диспетчера.",
+                ["phone.dictionary_empty"] =
+                    "Словарь пуст. Добавляйте слова во время разговоров.",
+                ["phone.finance_empty"] = "Операций пока не было.",
+                ["phone.contacts_empty"] = "Вы ещё ни с кем не познакомились.",
+                ["phone.transport_empty"] = "Транспорт станет доступен позже.",
+                ["phone.language_level"] = "Уровень казахского",
+                ["phone.time_left"] = "Осталось",
+
+                // Карта (FR-092)
+                ["map.you"] = "Вы",
+
+                // Этапы освоения слова
+                ["mastery.New"] = "новое",
+                ["mastery.Seen"] = "знакомое",
+                ["mastery.Learning"] = "изучается",
+                ["mastery.Familiar"] = "уверенно",
+                ["mastery.Mastered"] = "освоено",
+
+                // Причины транзакций (FR-050)
+                ["reason.StartingCapital"] = "стартовый капитал",
+                ["reason.JobPayout"] = "оплата смены",
+                ["reason.QuestReward"] = "награда за задание",
+                ["reason.Purchase"] = "покупка",
+                ["reason.Sale"] = "продажа",
+                ["reason.TaxiFare"] = "поездка на такси",
+                ["reason.Fuel"] = "топливо",
+                ["reason.Rent"] = "аренда",
+                ["reason.PropertyPurchase"] = "покупка жилья",
+                ["reason.Penalty"] = "штраф",
+                ["reason.Refund"] = "возврат",
+                ["reason.Discount"] = "скидка",
+                ["reason.Unknown"] = "без причины",
+
+                // Общие
+                ["common.back"] = "Назад",
+                ["common.minutes"] = "мин",
+
                 // Подсказки взаимодействия
                 ["prompt.interact"] = "E — взаимодействовать",
                 ["prompt.enter_home"] = "E — войти домой",

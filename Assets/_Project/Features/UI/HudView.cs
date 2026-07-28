@@ -27,6 +27,7 @@ namespace QonaevLife.UI
         private IGameClock _clock;
         private IWalletService _wallet;
         private JobShiftService _jobs;
+        private LocationRegistry _locations;
         private ILocalizedText _text;
 
         private int _lastShownMinute = -1;
@@ -34,7 +35,7 @@ namespace QonaevLife.UI
         private float _notificationHideTime;
 
         public void Bind(IEventBus eventBus, IGameClock clock, IWalletService wallet,
-            JobShiftService jobs, ILocalizedText text)
+            JobShiftService jobs, LocationRegistry locations, ILocalizedText text)
         {
             Unbind();
 
@@ -42,6 +43,7 @@ namespace QonaevLife.UI
             _clock = clock;
             _wallet = wallet;
             _jobs = jobs;
+            _locations = locations;
             _text = text;
 
             _eventBus.Subscribe<ShiftStartedEvent>(OnShiftStarted);
@@ -155,11 +157,21 @@ namespace QonaevLife.UI
         private void OnWeatherChanged(WeatherChangedEvent changed)
             => ShowNotification(_text.Resolve($"weather.{changed.Current}"));
 
+        /// <summary>
+        /// Название локации берётся из её определения: ID и ключ локализации
+        /// различаются, поэтому склеивать ключ из ID нельзя.
+        /// </summary>
         private void OnLocationInteracted(LocationInteractedEvent interacted)
-            => ShowNotification(_text.Resolve($"loc.{interacted.LocationId}") is { } name
-                                && !name.StartsWith('#')
-                ? name
-                : interacted.LocationId);
+        {
+            if (_locations != null
+                && _locations.TryGet(interacted.LocationId, out var definition))
+            {
+                ShowNotification(_text.Resolve(definition.DisplayNameKey));
+                return;
+            }
+
+            ShowNotification(interacted.LocationId);
+        }
 
         private void ShowNotification(string message)
         {

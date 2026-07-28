@@ -103,7 +103,7 @@ namespace QonaevLife.Bootstrap
             foreach (var hud in FindObjectsByType<UI.HudView>(FindObjectsSortMode.None))
             {
                 hud.Bind(_session.EventBus, _session.Clock, _session.Wallet,
-                    _session.Jobs, localizedText);
+                    _session.Jobs, _session.Locations, localizedText);
             }
 
             var dialogueView = FindFirstObjectByType<UI.DialogueView>();
