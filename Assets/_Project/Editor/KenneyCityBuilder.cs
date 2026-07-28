@@ -77,6 +77,10 @@ namespace QonaevLife.Editor
             var random = new System.Random(20260728);
             var material = LoadKenneyMaterial();
 
+            // Реестр входов заполняется заново: генератор может запускаться
+            // повторно, и старые координаты стали бы неверными.
+            EntranceLayout.Clear();
+
             BuildGroundAndRoads(root);
             BuildStreetFronts(root, random, material);
             BuildStreetProps(root, random);
@@ -239,18 +243,22 @@ namespace QonaevLife.Editor
 
                     var heightVariation = Mathf.Lerp(0.85f, 1.3f, (float)random.NextDouble());
 
-                    PlaceBuilding(frontRoot.transform, modelName, position, front.Yaw,
-                        heightVariation, material);
+                    var building = PlaceBuilding(frontRoot.transform, modelName, position,
+                        front.Yaw, heightVariation, material);
+
+                    // Фасад смотрит на дорогу: вход выносим перед ним по
+                    // фактическим габаритам поставленного дома.
+                    EntranceLayout.Register(building, front.Yaw, modelName);
                 }
             }
         }
 
-        private static void PlaceBuilding(Transform parent, string modelName, Vector3 position,
-            float yaw, float heightVariation, Material material)
+        private static GameObject PlaceBuilding(Transform parent, string modelName,
+            Vector3 position, float yaw, float heightVariation, Material material)
         {
             var detailed = LoadModel(modelName);
             if (detailed == null)
-                return;
+                return null;
 
             var container = new GameObject($"Building_{modelName}");
             container.transform.SetParent(parent, worldPositionStays: false);
@@ -285,6 +293,8 @@ namespace QonaevLife.Editor
 
             AddCollider(container, near);
             container.isStatic = true;
+
+            return container;
         }
 
         /// <summary>
@@ -469,6 +479,39 @@ namespace QonaevLife.Editor
 
             return false;
         }
+
+        /// <summary>
+        /// Козырёк над входом из набора Kenney. Возвращает null, если модели
+        /// нет — тогда генератор ставит вывеску-заглушку.
+        /// </summary>
+        public static GameObject TryCreateAwning(Transform parent, Color accent)
+        {
+            var prefab = LoadModel("detail-awning");
+            if (prefab == null)
+                return null;
+
+            var awning = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+            awning.name = "Awning";
+            awning.transform.localPosition = new Vector3(0f, 0f, 0f);
+            awning.transform.localRotation = Quaternion.identity;
+            awning.transform.localScale = Vector3.one * ModelScale;
+
+            // Цвет козырька различает заведения: игрок узнаёт магазин и кафе
+            // по виду, а не только по подсказке.
+            var material = CreateFlat($"Mat_Awning_{ColorKey(accent)}", accent, 0.2f);
+
+            foreach (var renderer in awning.GetComponentsInChildren<Renderer>())
+                renderer.sharedMaterial = material;
+
+            foreach (var child in awning.GetComponentsInChildren<Transform>())
+                child.gameObject.isStatic = true;
+
+            return awning;
+        }
+
+        private static string ColorKey(Color color)
+            => $"{Mathf.RoundToInt(color.r * 255)}_{Mathf.RoundToInt(color.g * 255)}_" +
+               $"{Mathf.RoundToInt(color.b * 255)}";
 
         private static GameObject LoadModel(string modelName)
             => AssetDatabase.LoadAssetAtPath<GameObject>($"{AssetRoot}/{modelName}.fbx");

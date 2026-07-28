@@ -119,6 +119,34 @@ namespace QonaevLife.Editor
             => AssetDatabase.LoadAssetAtPath<GameSessionConfig>(
                 $"{ContentRoot}/Balance/GameSessionConfig.asset");
 
+        /// <summary>
+        /// Обновляет позиции маркеров локаций под фактические координаты входов.
+        /// Карта и цели смены должны указывать туда, где вход стоит на самом
+        /// деле, а не на заданное вручную приближение (FR-092).
+        /// </summary>
+        public static void UpdateLocationPositions(
+            IReadOnlyList<(string Id, Vector3 Position)> placed)
+        {
+            if (placed == null)
+                return;
+
+            foreach (var entry in placed)
+            {
+                var path = $"{DefinitionsRoot}/Locations/{entry.Id}.asset";
+                var location = AssetDatabase.LoadAssetAtPath<LocationDefinition>(path);
+
+                if (location == null)
+                    continue;
+
+                var so = new SerializedObject(location);
+                so.FindProperty("markerPosition").vector3Value = entry.Position;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(location);
+            }
+
+            AssetDatabase.SaveAssets();
+        }
+
         private static void EnsureFolders()
         {
             EnsureFolder("Assets/_Project", "Content");

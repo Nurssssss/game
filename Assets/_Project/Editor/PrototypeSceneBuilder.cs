@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using QonaevLife.Bootstrap;
 using QonaevLife.Content;
@@ -384,36 +385,36 @@ namespace QonaevLife.Editor
             AssignPrivateField(binder, "lookAction", reference);
         }
 
+        /// <summary>
+        /// Ставит входы в заведения у фактических фасадов зданий. Координаты
+        /// берутся из реестра входов, а не задаются вручную: расстановка домов
+        /// зависит от их ширины, и заданная вручную точка попадала внутрь дома.
+        /// </summary>
         private static void BuildLocationMarkers()
         {
             var root = new GameObject("Locations");
-            var material = CreateMaterial("Mat_Interactable", new Color(0.25f, 0.75f, 0.4f));
 
             var kinds = new[]
             {
                 (PrototypeContentBuilder.ApartmentLocationId, InteractionKind.Door,
-                    "prompt.enter_home"),
+                    "prompt.enter_home", new Color(0.45f, 0.62f, 0.9f)),
                 (PrototypeContentBuilder.CourierHubLocationId, InteractionKind.Terminal,
-                    "prompt.take_shift"),
+                    "prompt.take_shift", new Color(0.95f, 0.72f, 0.25f)),
                 (PrototypeContentBuilder.ShopLocationId, InteractionKind.Shop,
-                    "prompt.open_shop"),
+                    "prompt.open_shop", new Color(0.4f, 0.8f, 0.5f)),
                 (PrototypeContentBuilder.CafeLocationId, InteractionKind.Npc,
-                    "prompt.deliver_order")
+                    "prompt.deliver_order", new Color(0.85f, 0.45f, 0.4f))
             };
+
+            var used = new HashSet<int>();
+            var placed = new List<(string Id, Vector3 Position)>();
 
             foreach (var row in PrototypeContentBuilder.LocationTable)
             {
-                var marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                marker.name = $"Interactable_{row.Id}";
-                marker.transform.SetParent(root.transform);
-                marker.transform.position = row.Position + new Vector3(0f, 0.9f, 0f);
-                marker.transform.localScale = new Vector3(1.4f, 1.8f, 1.4f);
-                marker.GetComponent<Renderer>().sharedMaterial = material;
-
-                var interactable = marker.AddComponent<LocationInteractable>();
-
                 var kind = InteractionKind.Terminal;
                 var prompt = "prompt.interact";
+                var accent = new Color(0.6f, 0.6f, 0.65f);
+
                 foreach (var candidate in kinds)
                 {
                     if (candidate.Item1 != row.Id)
@@ -421,17 +422,91 @@ namespace QonaevLife.Editor
 
                     kind = candidate.Item2;
                     prompt = candidate.Item3;
+                    accent = candidate.Item4;
                     break;
                 }
 
+                // Ближайший свободный вход к желаемому месту: заведение
+                // остаётся примерно там, где задумано, но у настоящей стены.
+                var position = row.Position;
+                var yaw = 0f;
+
+                if (EntranceLayout.TryTakeNearest(row.Position, used, out var entrance))
+                {
+                    position = entrance.DoorPosition;
+                    yaw = entrance.FacingYaw;
+                }
+
+                var entry = BuildEntrance(root.transform, row.Id, position, yaw, accent);
+
+                var interactable = entry.AddComponent<LocationInteractable>();
                 interactable.Configure(row.Id, kind, prompt);
+
+                placed.Add((row.Id, position));
             }
+
+            // Позиции в контенте обновляются под фактические: карта и цели
+            // смены должны указывать туда, где вход стоит на самом деле.
+            PrototypeContentBuilder.UpdateLocationPositions(placed);
         }
 
         /// <summary>
-        /// Собирает HUD и подсказку взаимодействия (FR-090, FR-012).
-        /// Масштабируется по разрешению, чтобы текст оставался читаемым (FR-095).
+        /// Вход в заведение: козырёк из набора Kenney, если он доступен, плюс
+        /// цветная вывеска и коллайдер зоны взаимодействия.
         /// </summary>
+        private static GameObject BuildEntrance(Transform parent, string locationId,
+            Vector3 position, float yaw, Color accent)
+        {
+            var entrance = new GameObject($"Interactable_{locationId}");
+            entrance.transform.SetParent(parent, worldPositionStays: false);
+            entrance.transform.SetPositionAndRotation(
+                position, Quaternion.Euler(0f, yaw, 0f));
+
+            // Зона взаимодействия — триггер, а не препятствие: игрок должен
+            // подходить к двери, а не упираться в невидимый куб.
+            var zone = entrance.AddComponent<BoxCollider>();
+            zone.isTrigger = true;
+            zone.center = new Vector3(0f, 1f, 0f);
+            zone.size = new Vector3(2.4f, 2f, 2.4f);
+
+            var awning = KenneyCityBuilder.TryCreateAwning(entrance.transform, accent);
+
+            if (awning == null)
+            {
+                // Без набора моделей — простая вывеска на столбиках.
+                BuildFallbackSign(entrance.transform, accent);
+            }
+
+            return entrance;
+        }
+
+        /// <summary>Вывеска-заглушка, когда моделей набора нет.</summary>
+        private static void BuildFallbackSign(Transform parent, Color accent)
+        {
+            var post = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            post.name = "Post";
+            post.transform.SetParent(parent, worldPositionStays: false);
+            post.transform.localPosition = new Vector3(0f, 1.1f, 0f);
+            post.transform.localScale = new Vector3(0.09f, 1.1f, 0.09f);
+            Object.DestroyImmediate(post.GetComponent<Collider>());
+            post.GetComponent<Renderer>().sharedMaterial =
+                CreateMaterial("Mat_SignPost", new Color(0.28f, 0.29f, 0.32f));
+
+            var board = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            board.name = "Board";
+            board.transform.SetParent(parent, worldPositionStays: false);
+            board.transform.localPosition = new Vector3(0f, 2.3f, 0f);
+            board.transform.localScale = new Vector3(1.5f, 0.6f, 0.12f);
+            Object.DestroyImmediate(board.GetComponent<Collider>());
+
+            var material = CreateMaterial($"Mat_Sign_{ColorKey(accent)}", accent);
+            board.GetComponent<Renderer>().sharedMaterial = material;
+        }
+
+        private static string ColorKey(Color color)
+            => $"{Mathf.RoundToInt(color.r * 255)}_{Mathf.RoundToInt(color.g * 255)}_" +
+               $"{Mathf.RoundToInt(color.b * 255)}";
+
         private static void BuildUserInterface()
         {
             var canvasObject = new GameObject("HUD_Canvas");
