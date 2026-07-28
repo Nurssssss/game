@@ -22,7 +22,8 @@ namespace QonaevLife.Bootstrap
             WeatherService weather, WalletService wallet, NeedsService needs,
             LanguageProgressService language, ISaveService saveService,
             LocationRegistry locations, DialogueService dialogue, JobShiftService jobs,
-            DialogueTriggerCoordinator npcState)
+            DialogueTriggerCoordinator npcState, ContentDatabase content,
+            UI.UiRouter router, UI.ISettingsService settings)
         {
             Registry = registry;
             EventBus = eventBus;
@@ -36,6 +37,9 @@ namespace QonaevLife.Bootstrap
             Dialogue = dialogue;
             Jobs = jobs;
             NpcState = npcState;
+            Content = content;
+            Router = router;
+            Settings = settings;
         }
 
         public ServiceRegistry Registry { get; }
@@ -50,6 +54,9 @@ namespace QonaevLife.Bootstrap
         public DialogueService Dialogue { get; }
         public JobShiftService Jobs { get; }
         public DialogueTriggerCoordinator NpcState { get; }
+        public ContentDatabase Content { get; }
+        public UI.UiRouter Router { get; }
+        public UI.ISettingsService Settings { get; }
 
         /// <summary>Продвигает время сессии на прошедший кадр.</summary>
         public void Tick(float realDeltaSeconds)
@@ -141,6 +148,9 @@ namespace QonaevLife.Bootstrap
             var saveDirectory = Path.Combine(persistentDataPath, config.SaveFolderName);
             var saveService = new JsonFileSaveService(saveDirectory, config.SaveSlotCount);
 
+            var router = new UI.UiRouter(eventBus);
+            var settings = new UI.JsonSettingsService(saveDirectory, eventBus);
+
             var locations = new LocationRegistry(content, eventBus, clock);
             var dialogue = new DialogueService(content, eventBus, language);
             var jobs = new JobShiftService(content, eventBus, clock, wallet, locations);
@@ -171,12 +181,14 @@ namespace QonaevLife.Bootstrap
             registry.Register(jobs);
             registry.Register(dialogueTrigger);
             registry.Register(coordinator);
+            registry.Register<UI.IUiRouter>(router);
+            registry.Register<UI.ISettingsService>(settings);
 
             registry.InitializeAll();
 
             return new GameSession(
                 registry, eventBus, clock, weather, wallet, needs, language, saveService,
-                locations, dialogue, jobs, dialogueTrigger);
+                locations, dialogue, jobs, dialogueTrigger, content, router, settings);
         }
 
         /// <summary>

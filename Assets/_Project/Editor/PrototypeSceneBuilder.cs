@@ -445,6 +445,42 @@ namespace QonaevLife.Editor
             promptRoot.SetActive(false);
 
             BuildDialogueWindow(canvasObject);
+
+            // Экраны меню, слотов, настроек и телефона на отдельном Canvas:
+            // они перекрывают HUD, поэтому должны рисоваться поверх него.
+            var screenCanvasObject = new GameObject("Screens_Canvas");
+            var screenCanvas = screenCanvasObject.AddComponent<Canvas>();
+            screenCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            screenCanvas.sortingOrder = 10;
+
+            var screenScaler = screenCanvasObject.AddComponent<CanvasScaler>();
+            screenScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            screenScaler.referenceResolution = new Vector2(1920f, 1080f);
+            screenScaler.matchWidthOrHeight = 0.5f;
+
+            screenCanvasObject.AddComponent<GraphicRaycaster>();
+
+            UiScreenBuilder.Build(screenCanvasObject);
+
+            // Масштаб интерфейса применяется к обоим Canvas (FR-095).
+            var applier = screenCanvasObject.AddComponent<SettingsApplier>();
+            applier.Configure(new[] { scaler, screenScaler });
+
+            EnsureEventSystem();
+        }
+
+        /// <summary>
+        /// EventSystem нужен для кликов по кнопкам. Без него интерфейс
+        /// отображается, но не реагирует на мышь.
+        /// </summary>
+        private static void EnsureEventSystem()
+        {
+            if (Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() != null)
+                return;
+
+            var eventSystem = new GameObject("EventSystem");
+            eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();
+            eventSystem.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
         }
 
         /// <summary>

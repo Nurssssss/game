@@ -18,6 +18,10 @@ namespace QonaevLife.Bootstrap
         [SerializeField] [Tooltip("Начислять стартовый капитал сразу при запуске (для отладки).")]
         private bool startNewGameOnAwake = true;
 
+        [SerializeField]
+        [Tooltip("Открывать главное меню при запуске (FR-001). Снимите для отладки мира.")]
+        private bool startInMainMenu = true;
+
         private GameSession _session;
 
         /// <summary>Текущая сессия или null, если запуск не удался.</summary>
@@ -113,6 +117,18 @@ namespace QonaevLife.Bootstrap
             var playerInput = FindFirstObjectByType<Player.PlayerInputBridge>();
             if (gate != null && dialogueView != null)
                 gate.Bind(_session.EventBus, playerInput, dialogueView);
+
+            // Экраны меню, слотов, настроек и телефона. Координатор создаётся
+            // здесь же, если его нет на сцене: сцену можно собрать без него.
+            var uiCoordinator = FindFirstObjectByType<UiCoordinator>()
+                                ?? gameObject.AddComponent<UiCoordinator>();
+
+            uiCoordinator.Bind(_session, _session.Router, _session.Settings, localizedText);
+
+            // Игра начинается с главного меню (FR-001): игрок выбирает новую
+            // игру или продолжение, а не оказывается сразу в мире.
+            if (startInMainMenu)
+                _session.Router.Replace(UI.UiScreen.MainMenu);
         }
 
         private void Update()
