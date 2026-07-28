@@ -198,14 +198,17 @@ namespace QonaevLife.Editor
         internal static readonly (string Id, string NameKey, LocationKind Kind, Vector3 Position,
             bool Interior, bool AlwaysOpen, int OpenHour, int CloseHour)[] LocationTable =
             {
+                // Позиции на тротуарах вдоль улиц, вне проезжей части и вне
+                // кварталов застройки: иначе маркер окажется внутри здания
+                // или посреди дороги.
                 (ApartmentLocationId, "loc.apartment", LocationKind.Apartment,
-                    new Vector3(0f, 0f, 0f), true, true, 0, 23),
+                    new Vector3(-10f, 0f, -12f), true, true, 0, 23),
                 (CourierHubLocationId, "loc.courier_hub", LocationKind.WorkHub,
-                    new Vector3(18f, 0f, 6f), false, false, 6, 22),
+                    new Vector3(10f, 0f, 14f), false, false, 6, 22),
                 (ShopLocationId, "loc.shop", LocationKind.Shop,
-                    new Vector3(-14f, 0f, 12f), false, false, 8, 22),
+                    new Vector3(-10f, 0f, 16f), false, false, 8, 22),
                 (CafeLocationId, "loc.cafe", LocationKind.Cafe,
-                    new Vector3(8f, 0f, -16f), false, false, 9, 23)
+                    new Vector3(11f, 0f, -14f), false, false, 9, 23)
             };
 
         private static List<ScriptableObject> BuildLocations()

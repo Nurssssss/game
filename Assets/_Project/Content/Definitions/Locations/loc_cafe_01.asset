@@ -17,7 +17,7 @@ MonoBehaviour:
   displayNameKey: loc.cafe
   kind: 2
   sectorId: sector_center
-  markerPosition: {x: 8, y: 0, z: -16}
+  markerPosition: {x: 11, y: 0, z: -14}
   isInterior: 0
   interiorAddressableKey: 
   alwaysOpen: 0

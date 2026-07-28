@@ -160,9 +160,13 @@ namespace QonaevLife.Editor
         {
             var root = new GameObject("World");
 
-            // Кварталы, дороги, тротуары, фонари и озеленение с процедурными
-            // текстурами. Геометрия остаётся примитивной — это блок-аут P1.
-            CityBlockoutBuilder.Build(root.transform);
+            // Город из моделей Kenney, если они импортированы; иначе
+            // процедурный блок-аут — проект должен собираться без внешних
+            // ассетов, чтобы клонирование репозитория не ломало сцену.
+            if (KenneyCityBuilder.IsAvailable)
+                KenneyCityBuilder.Build(root.transform);
+            else
+                CityBlockoutBuilder.Build(root.transform);
         }
 
         private static GameObject BuildPlayer()
