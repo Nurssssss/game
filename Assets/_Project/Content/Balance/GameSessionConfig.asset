@@ -31,6 +31,10 @@ MonoBehaviour:
     maxLevel: 10
     correctAnswersPerStage: 2
     hideTranslationFromStage: 3
+  npcSimulation:
+    activeRadius: 45
+    deactivationMargin: 8
+    maxActiveNpcs: 12
   needs:
   - needId: hunger
     decayPerGameMinute: 0.05

@@ -1,7 +1,12 @@
 {
     "name": "QonaevLife.Player",
     "rootNamespace": "QonaevLife.Player",
-    "references": ["QonaevLife.Core", "QonaevLife.Content", "Unity.InputSystem"],
+    "references": [
+        "QonaevLife.Core",
+        "QonaevLife.Content",
+        "Unity.InputSystem",
+        "Unity.Cinemachine"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

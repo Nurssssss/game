@@ -67,6 +67,11 @@ namespace QonaevLife.Bootstrap
         /// </summary>
         public void Tick(float realDeltaSeconds, UnityEngine.Vector3 playerPosition)
         {
+            // Уровни симуляции NPC обновляются даже на паузе: иначе, пока
+            // открыто меню, ни один NPC не станет активным и город останется
+            // пустым при возврате в игру.
+            Npcs.Update(playerPosition);
+
             if (Clock.IsPaused || realDeltaSeconds <= 0f)
                 return;
 
@@ -76,10 +81,8 @@ namespace QonaevLife.Bootstrap
             Weather.AdvanceMinutes(gameMinutes);
             Needs.AdvanceMinutes(gameMinutes);
 
-            // После продвижения времени: смена могла просрочить лимит этапа,
-            // а NPC — сменить место по расписанию.
+            // После продвижения времени смена могла просрочить лимит этапа.
             Jobs.Tick();
-            Npcs.Update(playerPosition);
         }
 
         /// <summary>Собирает текущее состояние сессии в сохранение (FR-003).</summary>

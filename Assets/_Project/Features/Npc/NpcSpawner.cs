@@ -47,6 +47,25 @@ namespace QonaevLife.Npc
 
             _eventBus.Subscribe<NpcSimulationLevelChangedEvent>(OnSimulationLevelChanged);
             _eventBus.Subscribe<NpcScheduleChangedEvent>(OnScheduleChanged);
+
+            SyncExisting();
+        }
+
+        /// <summary>
+        /// Показывает NPC, которые стали активными до подписки. События приходят
+        /// только на изменение состояния, а сервис мог отработать раньше —
+        /// без этой синхронизации уже активные NPC остались бы невидимыми.
+        /// </summary>
+        private void SyncExisting()
+        {
+            foreach (var npcId in _npcService.NpcIds)
+            {
+                if (!_npcService.TryGetState(npcId, out var state))
+                    continue;
+
+                if (state.Level == NpcSimulationLevel.Active)
+                    Show(npcId, state.WorldPosition);
+            }
         }
 
         public void Unbind()

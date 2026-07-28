@@ -325,10 +325,24 @@ namespace QonaevLife.Editor
             virtualCamera.Follow = lookTarget.transform;
             virtualCamera.LookAt = lookTarget.transform;
 
-            var follow = virtualCamera.gameObject.AddComponent<CinemachineFollow>();
-            follow.FollowOffset = new Vector3(0f, 2.6f, -5.5f);
+            // Орбитальное слежение вместо жёсткого смещения: игрок может
+            // осмотреться мышью вокруг персонажа (FR-010, FR-011).
+            var orbital = virtualCamera.gameObject.AddComponent<CinemachineOrbitalFollow>();
+            orbital.OrbitStyle = CinemachineOrbitalFollow.OrbitStyles.Sphere;
+            orbital.Radius = 6f;
+            orbital.TargetOffset = new Vector3(0f, 0.4f, 0f);
 
             virtualCamera.gameObject.AddComponent<CinemachineRotationComposer>();
+
+            // Контроллер осей связывает вращение камеры с действием Look из
+            // Input System: без него мышь никуда не подключена.
+            virtualCamera.gameObject.AddComponent<CinemachineInputAxisController>();
+
+            // Действие Look назначается в рантайме компонентом CameraLookBinder:
+            // список осей контроллера — свойство базового класса, недоступное
+            // через SerializedObject при сборке сцены.
+            var lookBinder = virtualCamera.gameObject.AddComponent<CameraLookBinder>();
+            AssignLookAction(lookBinder);
 
             // Камера не проходит сквозь стены (FR-011).
             var deoccluder = virtualCamera.gameObject.AddComponent<CinemachineDeoccluder>();
@@ -342,6 +356,32 @@ namespace QonaevLife.Editor
                 player.GetComponent<PlayerInputBridge>(),
                 "cameraTransform",
                 cameraObject.transform);
+        }
+
+        /// <summary>Назначает ссылку на действие Look биндеру камеры.</summary>
+        private static void AssignLookAction(CameraLookBinder binder)
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputActionsPath);
+            var action = asset?.FindAction("Player/Look");
+
+            if (action == null)
+            {
+                Debug.LogWarning("[Прототип] Действие Player/Look не найдено.");
+                return;
+            }
+
+            var reference = FindPersistedReference(
+                AssetDatabase.GetAssetPath(asset), action.id);
+
+            if (reference == null)
+            {
+                Debug.LogWarning(
+                    "[Прототип] Нет сохранённой ссылки на Player/Look — " +
+                    "назначьте её на ThirdPersonCamera вручную.");
+                return;
+            }
+
+            AssignPrivateField(binder, "lookAction", reference);
         }
 
         private static void BuildLocationMarkers()
