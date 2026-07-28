@@ -94,6 +94,19 @@ namespace QonaevLife.UI
                 ["phone.language_level"] = "Уровень казахского",
                 ["phone.time_left"] = "Осталось",
 
+                // Мини-уроки (FR-043)
+                ["lesson.kind.ChooseTranslation"] = "Выберите перевод",
+                ["lesson.kind.MatchContext"] = "Какое слово в этой фразе?",
+                ["lesson.correct"] = "Верно",
+                ["lesson.wrong"] = "Неверно — правильный ответ отмечен галочкой",
+                ["lesson.result"] = "Результат",
+                ["lesson.finished"] = "Урок завершён",
+                ["lesson.experience"] = "Опыт языка",
+                ["lesson.perfect"] = "Без ошибок! Опыт языка",
+                ["lesson.start"] = "Начать мини-урок",
+                ["lesson.not_enough_words"] =
+                    "Соберите слова в разговорах, чтобы открыть урок",
+
                 // Карта (FR-092)
                 ["map.you"] = "Вы",
 

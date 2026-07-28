@@ -24,7 +24,8 @@ namespace QonaevLife.Bootstrap
             LanguageProgressService language, ISaveService saveService,
             LocationRegistry locations, DialogueService dialogue, JobShiftService jobs,
             DialogueTriggerCoordinator npcState, ContentDatabase content,
-            UI.UiRouter router, UI.ISettingsService settings, NpcService npcs)
+            UI.UiRouter router, UI.ISettingsService settings, NpcService npcs,
+            LessonService lessons)
         {
             Registry = registry;
             EventBus = eventBus;
@@ -42,6 +43,7 @@ namespace QonaevLife.Bootstrap
             Router = router;
             Settings = settings;
             Npcs = npcs;
+            Lessons = lessons;
         }
 
         public ServiceRegistry Registry { get; }
@@ -60,6 +62,7 @@ namespace QonaevLife.Bootstrap
         public UI.UiRouter Router { get; }
         public UI.ISettingsService Settings { get; }
         public NpcService Npcs { get; }
+        public LessonService Lessons { get; }
 
         /// <summary>
         /// Продвигает время сессии. Позиция игрока нужна, чтобы решить,
@@ -171,6 +174,8 @@ namespace QonaevLife.Bootstrap
             var dialogue = new DialogueService(content, eventBus, language);
             var jobs = new JobShiftService(content, eventBus, clock, wallet, locations);
 
+            var lessons = new LessonService(content, eventBus, language, config.Lessons);
+
             var npcService = new NpcService(
                 content, eventBus, clock, locations, config.NpcSimulation);
 
@@ -198,6 +203,7 @@ namespace QonaevLife.Bootstrap
             registry.Register(locations);
             registry.Register(dialogue);
             registry.Register(jobs);
+            registry.Register(lessons);
             registry.Register<INpcService>(npcService);
             registry.Register(npcService);
             registry.Register(dialogueTrigger);
@@ -210,7 +216,7 @@ namespace QonaevLife.Bootstrap
             return new GameSession(
                 registry, eventBus, clock, weather, wallet, needs, language, saveService,
                 locations, dialogue, jobs, dialogueTrigger, content, router, settings,
-                npcService);
+                npcService, lessons);
         }
 
         /// <summary>

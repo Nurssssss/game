@@ -26,7 +26,8 @@ namespace QonaevLife.Editor
                 MainMenu = BuildMainMenu(canvas),
                 SaveSlots = BuildSaveSlots(canvas),
                 Settings = BuildSettings(canvas),
-                Phone = BuildPhone(canvas)
+                Phone = BuildPhone(canvas),
+                Lesson = BuildLesson(canvas)
             };
 
             return result;
@@ -39,6 +40,7 @@ namespace QonaevLife.Editor
             public SaveSlotsView SaveSlots;
             public SettingsView Settings;
             public PhoneView Phone;
+            public LessonView Lesson;
         }
 
         // ------------------------------------------------------------------
@@ -208,6 +210,49 @@ namespace QonaevLife.Editor
         }
 
         // ------------------------------------------------------------------
+
+        /// <summary>Экран мини-урока (FR-043).</summary>
+        private static LessonView BuildLesson(GameObject canvas)
+        {
+            var root = CreateFullScreenPanel(canvas.transform, "Screen_Lesson",
+                new Color(0f, 0f, 0f, 0.72f));
+
+            var frame = CreatePanel(root.transform, "LessonFrame", PanelColor,
+                new Vector2(0.5f, 0.5f), new Vector2(1100f, 700f));
+
+            var progress = CreateText(frame.transform, "Progress", string.Empty, 24f,
+                new Vector2(1f, 1f), new Vector2(200f, 40f), TextAlignmentOptions.TopRight);
+            progress.rectTransform.anchoredPosition = new Vector2(-28f, -24f);
+            progress.color = new Color(0.65f, 0.7f, 0.8f);
+
+            var kind = CreateText(frame.transform, "Kind", string.Empty, 26f,
+                new Vector2(0.5f, 0.9f), new Vector2(900f, 44f), TextAlignmentOptions.Center);
+            kind.color = AccentColor;
+
+            var prompt = CreateText(frame.transform, "Prompt", string.Empty, 44f,
+                new Vector2(0.5f, 0.72f), new Vector2(980f, 130f), TextAlignmentOptions.Center);
+
+            var options = CreateColumn(frame.transform, "Options",
+                new Vector2(0.5f, 0.38f), new Vector2(900f, 300f), spacing: 12f);
+
+            var optionTemplate = CreateButton(options, "OptionTemplate", "Вариант",
+                width: 860f, height: 58f);
+            optionTemplate.gameObject.SetActive(false);
+
+            var feedback = CreateText(frame.transform, "Feedback", string.Empty, 26f,
+                new Vector2(0.5f, 0.14f), new Vector2(900f, 44f), TextAlignmentOptions.Center);
+
+            var close = CreateButton(frame.transform, "CloseButton", "Закрыть",
+                width: 240f, height: 52f);
+            PlaceAt(close.GetComponent<RectTransform>(), new Vector2(0.5f, 0.06f));
+
+            var view = canvas.AddComponent<LessonView>();
+            view.ConfigureRoot(root);
+            view.Configure(progress, kind, prompt, feedback, options, optionTemplate, close);
+
+            root.SetActive(false);
+            return view;
+        }
 
         private static GameObject CreateFullScreenPanel(Transform parent, string name, Color color)
         {

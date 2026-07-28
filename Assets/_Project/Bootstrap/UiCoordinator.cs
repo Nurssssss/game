@@ -18,6 +18,9 @@ namespace QonaevLife.Bootstrap
         [SerializeField] [Tooltip("Клавиша паузы и выхода из экранов.")]
         private Key pauseKey = Key.Escape;
 
+        [SerializeField] [Tooltip("Клавиша запуска мини-урока (FR-043).")]
+        private Key lessonKey = Key.L;
+
         private GameSession _session;
         private UiRouter _router;
         private MainMenuModel _menuModel;
@@ -27,6 +30,7 @@ namespace QonaevLife.Bootstrap
         private SaveSlotsView _saveSlots;
         private SettingsView _settingsView;
         private PhoneView _phone;
+        private LessonView _lessonView;
         private Player.PlayerInputBridge _playerInput;
 
         /// <summary>
@@ -98,6 +102,13 @@ namespace QonaevLife.Bootstrap
                     objectiveProvider: () => _session.Jobs.CurrentTargetLocationId);
             }
 
+            _lessonView = FindAnyObjectByType<LessonView>();
+            if (_lessonView != null)
+            {
+                _lessonView.BindScreen(bus, _router, text);
+                _lessonView.BindLesson(bus, _session.Lessons);
+            }
+
             var applier = FindAnyObjectByType<SettingsApplier>();
             if (applier != null)
                 applier.Bind(bus, _settings, _session.Language);
@@ -116,6 +127,10 @@ namespace QonaevLife.Bootstrap
                 HandlePause();
             else if (keyboard[phoneKey].wasPressedThisFrame)
                 HandlePhone();
+            else if (keyboard[lessonKey].wasPressedThisFrame)
+                HandleLesson();
+            else if (_router.Current == UiScreen.Lesson)
+                HandleLessonKeys(keyboard);
         }
 
         /// <summary>
@@ -133,6 +148,46 @@ namespace QonaevLife.Bootstrap
             // Диалог закрывает себя сам через DialogueInputGate.
             if (_router.Current != UiScreen.Dialogue)
                 _router.Pop();
+        }
+
+        /// <summary>
+        /// Запускает мини-урок. Урок строится из слов личного словаря, поэтому
+        /// без собранных слов он не откроется — игрок сначала разговаривает.
+        /// </summary>
+        private void HandleLesson()
+        {
+            if (_router.Current == UiScreen.Lesson)
+            {
+                _router.Pop();
+                return;
+            }
+
+            if (_router.Current != UiScreen.None && _router.Current != UiScreen.Phone)
+                return;
+
+            if (!_session.Lessons.TryStart())
+            {
+                Debug.Log("[UI] Недостаточно слов для урока — соберите их в разговорах.");
+                return;
+            }
+
+            _router.Push(UiScreen.Lesson);
+        }
+
+        /// <summary>Цифры 1–4 отвечают на задание урока.</summary>
+        private void HandleLessonKeys(Keyboard keyboard)
+        {
+            if (_lessonView == null)
+                return;
+
+            for (var i = 0; i < 4; i++)
+            {
+                if (keyboard[Key.Digit1 + i].wasPressedThisFrame)
+                {
+                    _lessonView.Answer(i);
+                    return;
+                }
+            }
         }
 
         private void HandlePhone()

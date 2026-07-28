@@ -40,6 +40,10 @@ namespace QonaevLife.Bootstrap
         [Header("Язык")]
         [SerializeField] private LanguageProgressSettings language = LanguageProgressSettings.Default;
 
+        [Header("Мини-уроки")]
+        [SerializeField] [Tooltip("Число заданий и опыт за урок (FR-043).")]
+        private LessonSettings lessons = LessonSettings.Default;
+
         [Header("NPC")]
         [SerializeField] [Tooltip("Радиус и бюджет полной симуляции NPC (FR-032).")]
         private Npc.NpcSimulationSettings npcSimulation = Npc.NpcSimulationSettings.Default;
@@ -94,6 +98,7 @@ namespace QonaevLife.Bootstrap
         public string PrimaryJobHubLocationId => primaryJobHubLocationId;
         public Npc.NpcSimulationSettings NpcSimulation => npcSimulation;
         public LanguageProgressSettings Language => language;
+        public LessonSettings Lessons => lessons;
         public IReadOnlyList<NeedSettings> Needs => needs;
         public int SaveSlotCount => saveSlotCount;
         public string SaveFolderName => saveFolderName;
@@ -162,6 +167,12 @@ namespace QonaevLife.Bootstrap
             if (string.IsNullOrWhiteSpace(primaryJobHubLocationId))
             {
                 error = "Не задана локация выдачи смены.";
+                return false;
+            }
+
+            if (!lessons.IsValid())
+            {
+                error = "Некорректные настройки мини-уроков (FR-043).";
                 return false;
             }
 
