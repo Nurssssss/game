@@ -21,7 +21,10 @@ namespace QonaevLife.Npc
 
         [SerializeField] [Tooltip("Скорость перехода к новой точке расписания, м/с.")]
         [Min(0.1f)]
-        private float walkSpeed = 1.6f;
+        private float travelSpeed = 1.8f;
+
+        [SerializeField] [Tooltip("Поведение внутри фазы суток: прогулка у точки.")]
+        private NpcWanderSettings wander = NpcWanderSettings.Default;
 
         private readonly Dictionary<string, NpcInstance> _instances = new();
         private readonly List<string> _idBuffer = new();
@@ -35,6 +38,15 @@ namespace QonaevLife.Npc
         {
             public GameObject Root;
             public Vector3 Target;
+
+            /// <summary>Точка расписания — центр, вокруг которого NPC гуляет.</summary>
+            public Vector3 Anchor;
+
+            /// <summary>Когда закончится пауза и можно выбрать новую точку.</summary>
+            public float NextMoveTime;
+
+            /// <summary>Идёт к новой точке расписания, а не прогуливается.</summary>
+            public bool IsTravelling;
         }
 
         public void Bind(IEventBus eventBus, INpcService npcService, ContentDatabase content)
@@ -97,8 +109,12 @@ namespace QonaevLife.Npc
             if (!_instances.TryGetValue(changed.NpcId, out var instance))
                 return;
 
-            if (_npcService.TryGetState(changed.NpcId, out var state))
-                instance.Target = state.WorldPosition + Vector3.up * groundOffset;
+            if (!_npcService.TryGetState(changed.NpcId, out var state))
+                return;
+
+            instance.Anchor = state.WorldPosition + Vector3.up * groundOffset;
+            instance.Target = instance.Anchor;
+            instance.IsTravelling = true;
         }
 
         private void Update()
@@ -106,37 +122,74 @@ namespace QonaevLife.Npc
             if (_instances.Count == 0)
                 return;
 
-            var step = walkSpeed * Time.deltaTime;
-
             _idBuffer.Clear();
             _idBuffer.AddRange(_instances.Keys);
 
             foreach (var npcId in _idBuffer)
             {
                 var instance = _instances[npcId];
-                if (instance.Root == null)
+                if (instance.Root == null || !instance.Root.activeSelf)
                     continue;
 
-                var current = instance.Root.transform.position;
-                if ((instance.Target - current).sqrMagnitude < 0.01f)
-                    continue;
-
-                var next = Vector3.MoveTowards(current, instance.Target, step);
-                instance.Root.transform.position = next;
-
-                // Разворот в сторону движения: фигура не должна ехать боком.
-                var direction = instance.Target - current;
-                direction.y = 0f;
-
-                if (direction.sqrMagnitude > 0.001f)
-                {
-                    instance.Root.transform.rotation = Quaternion.RotateTowards(
-                        instance.Root.transform.rotation,
-                        Quaternion.LookRotation(direction, Vector3.up),
-                        360f * Time.deltaTime);
-                }
+                UpdateInstance(instance);
             }
         }
+
+        /// <summary>
+        /// Ведёт NPC к цели, а на месте выбирает новую точку прогулки. Так
+        /// город живёт и внутри фазы суток: смена фазы происходит раз в
+        /// несколько игровых часов, и без прогулки NPC стоял бы столбом.
+        /// </summary>
+        private void UpdateInstance(NpcInstance instance)
+        {
+            var transformRef = instance.Root.transform;
+            var current = transformRef.position;
+            var toTarget = instance.Target - current;
+            toTarget.y = 0f;
+
+            // Переход между точками расписания идёт быстрее прогулки.
+            var speed = instance.IsTravelling ? travelSpeed : wander.walkSpeed;
+
+            if (toTarget.sqrMagnitude > 0.04f)
+            {
+                transformRef.position = Vector3.MoveTowards(
+                    current, instance.Target, speed * Time.deltaTime);
+
+                // Разворот в сторону движения: фигура не должна ехать боком.
+                transformRef.rotation = Quaternion.RotateTowards(
+                    transformRef.rotation,
+                    Quaternion.LookRotation(toTarget, Vector3.up),
+                    240f * Time.deltaTime);
+
+                return;
+            }
+
+            // Цель достигнута.
+            if (instance.IsTravelling)
+            {
+                instance.IsTravelling = false;
+                instance.NextMoveTime = Time.time + RandomPause();
+                return;
+            }
+
+            if (Time.time < instance.NextMoveTime)
+                return;
+
+            instance.Target = PickWanderPoint(instance.Anchor);
+            instance.NextMoveTime = Time.time + RandomPause();
+        }
+
+        /// <summary>Случайная точка в круге вокруг якоря.</summary>
+        private Vector3 PickWanderPoint(Vector3 anchor)
+        {
+            if (wander.wanderRadius <= 0.01f)
+                return anchor;
+
+            var offset = Random.insideUnitCircle * wander.wanderRadius;
+            return new Vector3(anchor.x + offset.x, anchor.y, anchor.z + offset.y);
+        }
+
+        private float RandomPause() => Random.Range(wander.minPause, wander.maxPause);
 
         private void Show(string npcId, Vector3 worldPosition)
         {
@@ -145,14 +198,25 @@ namespace QonaevLife.Npc
             if (_instances.TryGetValue(npcId, out var existing))
             {
                 existing.Root.SetActive(true);
+                existing.Anchor = position;
                 existing.Target = position;
+                existing.IsTravelling = true;
                 return;
             }
 
             var root = CreateFigure(npcId);
             root.transform.position = position;
 
-            _instances[npcId] = new NpcInstance { Root = root, Target = position };
+            _instances[npcId] = new NpcInstance
+            {
+                Root = root,
+                Anchor = position,
+
+                // Первая точка прогулки выбирается сразу: иначе все NPC
+                // стояли бы ровно в центре локации.
+                Target = PickWanderPoint(position),
+                NextMoveTime = Time.time + RandomPause()
+            };
         }
 
         private void Hide(string npcId)
