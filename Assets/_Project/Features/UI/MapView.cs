@@ -108,9 +108,9 @@ namespace QonaevLife.UI
 
             var symbol = data.Kind switch
             {
-                MapMarkerKind.Player => "●",
-                MapMarkerKind.Objective => "★",
-                _ => data.IsOpen ? "▪" : "×"
+                MapMarkerKind.Player => "o",
+                MapMarkerKind.Objective => "*",
+                _ => data.IsOpen ? "+" : "x"
             };
 
             var name = _text != null ? _text.Resolve(data.LabelKey) : data.LabelKey;

@@ -45,7 +45,7 @@ namespace QonaevLife.Bootstrap
             _settings = settings;
             _menuModel = new MainMenuModel(session.SaveService);
 
-            _playerInput = FindAnyObjectByType<Player.PlayerInputBridge>();
+            _playerInput = FindAnyObjectByType<Player.PlayerInputBridge>(FindObjectsInactive.Include);
 
             BindScreens(text);
 
@@ -58,28 +58,28 @@ namespace QonaevLife.Bootstrap
         {
             var bus = _session.EventBus;
 
-            _mainMenu = FindAnyObjectByType<MainMenuView>();
+            _mainMenu = FindAnyObjectByType<MainMenuView>(FindObjectsInactive.Include);
             if (_mainMenu != null)
             {
                 _mainMenu.BindScreen(bus, _router, text);
                 _mainMenu.BindMenu(bus, _menuModel);
             }
 
-            _saveSlots = FindAnyObjectByType<SaveSlotsView>();
+            _saveSlots = FindAnyObjectByType<SaveSlotsView>(FindObjectsInactive.Include);
             if (_saveSlots != null)
             {
                 _saveSlots.BindScreen(bus, _router, text);
                 _saveSlots.BindSlots(bus, _menuModel);
             }
 
-            _settingsView = FindAnyObjectByType<SettingsView>();
+            _settingsView = FindAnyObjectByType<SettingsView>(FindObjectsInactive.Include);
             if (_settingsView != null)
             {
                 _settingsView.BindScreen(bus, _router, text);
                 _settingsView.BindSettings(_settings);
             }
 
-            _phone = FindAnyObjectByType<PhoneView>();
+            _phone = FindAnyObjectByType<PhoneView>(FindObjectsInactive.Include);
             if (_phone != null)
             {
                 _phone.BindScreen(bus, _router, text);
@@ -90,7 +90,7 @@ namespace QonaevLife.Bootstrap
                 _phone.BindPhone(phoneModel);
             }
 
-            var mapView = FindAnyObjectByType<MapView>();
+            var mapView = FindAnyObjectByType<MapView>(FindObjectsInactive.Include);
             if (mapView != null)
             {
                 var mapModel = new MapModel(_session.Locations);
@@ -102,14 +102,14 @@ namespace QonaevLife.Bootstrap
                     objectiveProvider: () => _session.Jobs.CurrentTargetLocationId);
             }
 
-            _lessonView = FindAnyObjectByType<LessonView>();
+            _lessonView = FindAnyObjectByType<LessonView>(FindObjectsInactive.Include);
             if (_lessonView != null)
             {
                 _lessonView.BindScreen(bus, _router, text);
                 _lessonView.BindLesson(bus, _session.Lessons);
             }
 
-            var applier = FindAnyObjectByType<SettingsApplier>();
+            var applier = FindAnyObjectByType<SettingsApplier>(FindObjectsInactive.Include);
             if (applier != null)
                 applier.Bind(bus, _settings, _session.Language);
         }

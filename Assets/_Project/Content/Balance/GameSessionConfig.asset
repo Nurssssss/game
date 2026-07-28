@@ -31,6 +31,10 @@ MonoBehaviour:
     maxLevel: 10
     correctAnswersPerStage: 2
     hideTranslationFromStage: 3
+  lessons:
+    tasksPerLesson: 5
+    experiencePerCorrectAnswer: 12
+    perfectLessonBonus: 20
   npcSimulation:
     activeRadius: 45
     deactivationMargin: 8

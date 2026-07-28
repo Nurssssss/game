@@ -17,7 +17,7 @@ MonoBehaviour:
   displayNameKey: loc.courier_hub
   kind: 6
   sectorId: sector_center
-  markerPosition: {x: 7, y: 0, z: 16}
+  markerPosition: {x: 22.24054, y: 0, z: 15.911999}
   isInterior: 0
   interiorAddressableKey: 
   alwaysOpen: 0

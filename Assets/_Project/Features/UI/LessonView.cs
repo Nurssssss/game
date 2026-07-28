@@ -185,7 +185,7 @@ namespace QonaevLife.UI
                 var label = _optionButtons[correctIndex].GetComponentInChildren<TMP_Text>();
                 if (label != null)
                 {
-                    label.text = $"✓ {label.text}";
+                    label.text = $"[v] {label.text}";
                     label.color = new Color(0.5f, 0.9f, 0.55f);
                 }
             }
@@ -195,7 +195,7 @@ namespace QonaevLife.UI
                 var label = _optionButtons[chosenIndex].GetComponentInChildren<TMP_Text>();
                 if (label != null)
                 {
-                    label.text = $"× {label.text}";
+                    label.text = $"[x] {label.text}";
                     label.color = new Color(1f, 0.55f, 0.5f);
                 }
             }

@@ -17,7 +17,7 @@ MonoBehaviour:
   displayNameKey: loc.apartment
   kind: 0
   sectorId: sector_center
-  markerPosition: {x: -7, y: 0, z: -18}
+  markerPosition: {x: -22.371294, y: 0, z: -15.84}
   isInterior: 1
   interiorAddressableKey: interior_loc_apartment_01
   alwaysOpen: 1

@@ -219,7 +219,7 @@ namespace QonaevLife.UI
                     if (wordText.StartsWith('#'))
                         wordText = TrimWordPrefix(wordId);
 
-                    label.text = alreadyKnown ? $"✓ {wordText}" : $"+ {wordText}";
+                    label.text = alreadyKnown ? $"[v] {wordText}" : $"+ {wordText}";
                 }
 
                 button.onClick.RemoveAllListeners();

@@ -73,12 +73,12 @@ namespace QonaevLife.Bootstrap
         {
             var context = new InteractionContext(_session.EventBus, _session.Clock);
 
-            foreach (var binder in FindObjectsByType<Player.PlayerSessionBinder>())
+            foreach (var binder in FindObjectsByType<Player.PlayerSessionBinder>(FindObjectsInactive.Include))
             {
                 binder.Detector?.Bind(_session.EventBus, context);
             }
 
-            foreach (var interactable in FindObjectsByType<World.LocationInteractable>())
+            foreach (var interactable in FindObjectsByType<World.LocationInteractable>(FindObjectsInactive.Include))
             {
                 interactable.Bind(_session.Locations);
             }
@@ -87,38 +87,38 @@ namespace QonaevLife.Bootstrap
             // подключается отдельно (FR-094).
             var localizedText = UI.DictionaryLocalizedText.CreateRussianPrototype();
 
-            foreach (var lighting in FindObjectsByType<World.DayNightLighting>())
+            foreach (var lighting in FindObjectsByType<World.DayNightLighting>(FindObjectsInactive.Include))
             {
                 lighting.Bind(_session.Clock);
             }
 
-            foreach (var prompt in FindObjectsByType<UI.InteractionPromptView>())
+            foreach (var prompt in FindObjectsByType<UI.InteractionPromptView>(FindObjectsInactive.Include))
             {
                 prompt.Bind(_session.EventBus, localizedText);
             }
 
-            foreach (var hud in FindObjectsByType<UI.HudView>())
+            foreach (var hud in FindObjectsByType<UI.HudView>(FindObjectsInactive.Include))
             {
                 hud.Bind(_session.EventBus, _session.Clock, _session.Wallet,
                     _session.Jobs, _session.Locations, localizedText);
             }
 
-            var dialogueView = FindAnyObjectByType<UI.DialogueView>();
+            var dialogueView = FindAnyObjectByType<UI.DialogueView>(FindObjectsInactive.Include);
             if (dialogueView != null)
             {
                 dialogueView.Bind(_session.EventBus, _session.Dialogue,
                     _session.Language, localizedText);
             }
 
-            var gate = FindAnyObjectByType<UI.DialogueInputGate>();
-            var playerInput = FindAnyObjectByType<Player.PlayerInputBridge>();
+            var gate = FindAnyObjectByType<UI.DialogueInputGate>(FindObjectsInactive.Include);
+            var playerInput = FindAnyObjectByType<Player.PlayerInputBridge>(FindObjectsInactive.Include);
 
             if (playerInput != null)
                 _playerTransform = playerInput.transform;
 
             // Фигуры NPC на сцене. Спавнер создаётся, если его нет: сцена
             // должна собираться и без него.
-            var spawner = FindAnyObjectByType<Npc.NpcSpawner>();
+            var spawner = FindAnyObjectByType<Npc.NpcSpawner>(FindObjectsInactive.Include);
             if (spawner == null)
             {
                 var spawnerObject = new GameObject("NpcSpawner");
@@ -131,7 +131,7 @@ namespace QonaevLife.Bootstrap
 
             // Экраны меню, слотов, настроек и телефона. Координатор создаётся
             // здесь же, если его нет на сцене: сцену можно собрать без него.
-            var uiCoordinator = FindAnyObjectByType<UiCoordinator>()
+            var uiCoordinator = FindAnyObjectByType<UiCoordinator>(FindObjectsInactive.Include)
                                 ?? gameObject.AddComponent<UiCoordinator>();
 
             uiCoordinator.Bind(_session, _session.Router, _session.Settings, localizedText);

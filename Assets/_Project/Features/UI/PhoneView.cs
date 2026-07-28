@@ -102,7 +102,7 @@ namespace QonaevLife.UI
                 // информация не должна передаваться одним цветом (п. 9 ТЗ).
                 if (Tabs[i] == active)
                 {
-                    label.text = $"▸ {label.text}";
+                    label.text = $"> {label.text}";
                     label.color = new Color(0.6f, 0.85f, 1f);
                 }
                 else
@@ -206,7 +206,7 @@ namespace QonaevLife.UI
             {
                 // Знак дублирует смысл операции: доход и расход различимы
                 // без цвета.
-                var sign = entry.IsIncome ? "+" : "−";
+                var sign = entry.IsIncome ? "+" : "-";
                 var amount = System.Math.Abs(entry.Amount);
 
                 builder.AppendLine(
