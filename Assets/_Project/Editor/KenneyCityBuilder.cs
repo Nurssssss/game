@@ -26,8 +26,21 @@ namespace QonaevLife.Editor
         /// </summary>
         private const float ModelScale = 8f;
 
-        /// <summary>Шаг застройки в метрах: ширина дома после масштабирования.</summary>
-        private const float LotWidth = 7.5f;
+        /// <summary>
+        /// Промежуток между соседними домами в метрах. Ширина участка берётся
+        /// из габаритов конкретной модели: в наборе она различается втрое
+        /// (0.84 … 2.32 единицы), поэтому фиксированный шаг не подходит.
+        /// </summary>
+        private const float GapBetweenBuildings = 1.2f;
+
+        /// <summary>
+        /// Ширина участка для отступа от перекрёстка. Соответствует самой
+        /// широкой модели набора (building-n, 2.32 единицы).
+        /// </summary>
+        private const float LotWidth = 12.5f;
+
+        /// <summary>Кэш ширины моделей: замер требует создания экземпляра.</summary>
+        private static readonly Dictionary<string, float> WidthCache = new();
 
         /// <summary>Полуширина проезжей части.</summary>
         private const float RoadHalfWidth = 5f;
@@ -84,6 +97,17 @@ namespace QonaevLife.Editor
                 new Vector2(30f, 30f), 0.12f);
             ground.isStatic = true;
 
+            // Plane даёт коллайдер нулевой толщины: на быстром движении или
+            // при старте внутри геометрии персонаж способен его пробить.
+            // Толстая невидимая плита под землёй ловит такие случаи.
+            var safetyFloor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            safetyFloor.name = "SafetyFloor";
+            safetyFloor.transform.SetParent(root, worldPositionStays: false);
+            safetyFloor.transform.localPosition = new Vector3(0f, -1.5f, 0f);
+            safetyFloor.transform.localScale = new Vector3(200f, 3f, 200f);
+            Object.DestroyImmediate(safetyFloor.GetComponent<MeshRenderer>());
+            safetyFloor.isStatic = true;
+
             var roads = new GameObject("Roads");
             roads.transform.SetParent(root, worldPositionStays: false);
 
@@ -136,21 +160,37 @@ namespace QonaevLife.Editor
             var district = new GameObject("Buildings");
             district.transform.SetParent(root, worldPositionStays: false);
 
+            // Занятые участки в плане. Общий список на весь район: угловые
+            // дома соседних фронтов проверяются друг против друга.
+            var occupied = new List<Bounds>();
+
             // Отступ фасада от центра дороги: проезжая часть плюс тротуар.
             var frontOffset = RoadHalfWidth + SidewalkWidth;
 
             // Четыре фронта вдоль обеих улиц, по обе стороны.
             // yaw задаёт направление фасада: дом смотрит на дорогу.
-            var fronts = new (Vector3 Origin, Vector3 Step, float Yaw, int Count, float Tall)[]
+            // Фронты вдоль улицы «север-юг» отступают глубже, чем вдоль
+            // «восток-запад»: так ряды не пересекаются на углах перекрёстка.
+            var deepOffset = frontOffset + LotWidth;
+
+            const float frontLength = 88f;
+            const int maxPerFront = 14;
+
+            var fronts = new (Vector3 Origin, Vector3 Step, float Yaw, int Count, float Tall,
+                float Length)[]
             {
                 // Улица «север-юг», западная сторона: фасады смотрят на восток.
-                (new Vector3(-frontOffset, 0f, -40f), new Vector3(0f, 0f, LotWidth), 90f, 11, 0.2f),
+                (new Vector3(-frontOffset, 0f, -44f), Vector3.forward, 90f, maxPerFront, 0.2f,
+                    frontLength),
                 // Восточная сторона: фасады на запад.
-                (new Vector3(frontOffset, 0f, -40f), new Vector3(0f, 0f, LotWidth), -90f, 11, 0.35f),
+                (new Vector3(frontOffset, 0f, -44f), Vector3.forward, -90f, maxPerFront, 0.35f,
+                    frontLength),
                 // Улица «восток-запад», южная сторона: фасады на север.
-                (new Vector3(-40f, 0f, -frontOffset), new Vector3(LotWidth, 0f, 0f), 0f, 11, 0.15f),
+                (new Vector3(-44f, 0f, -deepOffset), Vector3.right, 0f, maxPerFront, 0.15f,
+                    frontLength),
                 // Северная сторона: фасады на юг.
-                (new Vector3(-40f, 0f, frontOffset), new Vector3(LotWidth, 0f, 0f), 180f, 11, 0.3f)
+                (new Vector3(-44f, 0f, deepOffset), Vector3.right, 180f, maxPerFront, 0.3f,
+                    frontLength)
             };
 
             foreach (var front in fronts)
@@ -158,23 +198,46 @@ namespace QonaevLife.Editor
                 var frontRoot = new GameObject($"Front_{front.Yaw:0}");
                 frontRoot.transform.SetParent(district.transform, worldPositionStays: false);
 
+                // Дома ставятся вплотную по фактической ширине каждой модели,
+                // а не по фиксированному шагу: ширина в наборе различается
+                // втрое (0.84 … 2.32 единицы), и единый шаг либо оставлял бы
+                // дыры, либо приводил к наложению.
+                var direction = front.Step.normalized;
+                var travelled = 0f;
+
                 for (var i = 0; i < front.Count; i++)
                 {
-                    var position = front.Origin + front.Step * i;
-
-                    // Пропускаем участки у перекрёстка: там должен быть проезд.
-                    if (Mathf.Abs(position.x) < frontOffset + 1f
-                        && Mathf.Abs(position.z) < frontOffset + 1f)
-                    {
-                        continue;
-                    }
-
                     var isTall = random.NextDouble() < front.Tall;
                     var pool = isTall ? SkyscraperNames : BuildingNames;
                     var modelName = pool[random.Next(pool.Length)];
 
-                    // Разная высота домов: масштаб по вертикали слегка варьируется.
-                    var heightVariation = Mathf.Lerp(0.85f, 1.35f, (float)random.NextDouble());
+                    var width = GetModelWidth(modelName) * ModelScale;
+
+                    // Центр участка: половина ширины от текущей границы.
+                    var position = front.Origin + direction * (travelled + width / 2f);
+                    travelled += width + GapBetweenBuildings;
+
+                    if (travelled > front.Length)
+                        break;
+
+                    // Участок у перекрёстка оставляем под проезд.
+                    var clearance = frontOffset + 1f;
+                    if (Mathf.Abs(position.x) < clearance && Mathf.Abs(position.z) < clearance)
+                        continue;
+
+                    // Проверяем фактическое пересечение с уже поставленными
+                    // домами: отступ «на глаз» либо оставляет наложения,
+                    // либо выедает половину улицы.
+                    var footprint = new Bounds(
+                        new Vector3(position.x, 0f, position.z),
+                        new Vector3(width, 1f, width));
+
+                    if (Overlaps(occupied, footprint))
+                        continue;
+
+                    occupied.Add(footprint);
+
+                    var heightVariation = Mathf.Lerp(0.85f, 1.3f, (float)random.NextDouble());
 
                     PlaceBuilding(frontRoot.transform, modelName, position, front.Yaw,
                         heightVariation, material);
@@ -392,8 +455,56 @@ namespace QonaevLife.Editor
             return instance;
         }
 
+        /// <summary>
+        /// Пересекается ли участок с уже занятыми. Сравнение только в плане:
+        /// высота домов различается, но занимают они землю одинаково.
+        /// </summary>
+        private static bool Overlaps(List<Bounds> occupied, Bounds candidate)
+        {
+            foreach (var existing in occupied)
+            {
+                if (existing.Intersects(candidate))
+                    return true;
+            }
+
+            return false;
+        }
+
         private static GameObject LoadModel(string modelName)
             => AssetDatabase.LoadAssetAtPath<GameObject>($"{AssetRoot}/{modelName}.fbx");
+
+        /// <summary>
+        /// Ширина модели в единицах ассета — максимум из габаритов по X и Z,
+        /// потому что дом может быть повёрнут фасадом в любую сторону.
+        /// Результат кэшируется: замер требует создания и удаления экземпляра.
+        /// </summary>
+        private static float GetModelWidth(string modelName)
+        {
+            if (WidthCache.TryGetValue(modelName, out var cached))
+                return cached;
+
+            var prefab = LoadModel(modelName);
+            if (prefab == null)
+                return 1f;
+
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            var renderers = instance.GetComponentsInChildren<MeshRenderer>();
+
+            var width = 1f;
+            if (renderers.Length > 0)
+            {
+                var bounds = renderers[0].bounds;
+                for (var i = 1; i < renderers.Length; i++)
+                    bounds.Encapsulate(renderers[i].bounds);
+
+                width = Mathf.Max(bounds.size.x, bounds.size.z);
+            }
+
+            Object.DestroyImmediate(instance);
+
+            WidthCache[modelName] = width;
+            return width;
+        }
 
         private static Material LoadKenneyMaterial()
         {

@@ -173,8 +173,10 @@ namespace QonaevLife.Editor
         {
             var player = new GameObject("Player");
 
-            // Старт на тротуаре у дома, а не посреди перекрёстка.
-            player.transform.position = new Vector3(-9f, 1.1f, -4f);
+            // Старт на тротуаре у перекрёстка: проезжая часть ±5 м, фасады
+            // начинаются с 8.5 м, поэтому 6.8 м — свободная полоса тротуара.
+            // Высота с запасом над землёй, чтобы контроллер приземлился сам.
+            player.transform.position = new Vector3(6.8f, 1.2f, -2f);
 
             var controller = player.AddComponent<CharacterController>();
             controller.height = 1.8f;
