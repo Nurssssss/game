@@ -192,7 +192,7 @@ namespace QonaevLife.UI
         private string BuildFinance()
         {
             var builder = new System.Text.StringBuilder();
-            builder.AppendLine($"<b>{Text.Resolve("hud.money")}: {_model.Balance} ₸</b>");
+            builder.AppendLine($"<b>{Text.Resolve("hud.money")}: {_model.Balance} {Text.Resolve("common.currency")}</b>");
             builder.AppendLine();
 
             var entries = _model.GetFinance();
@@ -211,7 +211,7 @@ namespace QonaevLife.UI
 
                 builder.AppendLine(
                     $"{Text.Resolve("hud.day")} {entry.GameDay}   " +
-                    $"{sign}{amount} ₸   {Text.Resolve(entry.ReasonKey)}");
+                    $"{sign}{amount} {Text.Resolve("common.currency")}   {Text.Resolve(entry.ReasonKey)}");
             }
 
             return builder.ToString();

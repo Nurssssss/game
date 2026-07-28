@@ -30,6 +30,19 @@ namespace QonaevLife.Editor
         [MenuItem("Qonaev Life/Собрать тестовую сцену", priority = 11)]
         public static void BuildMenuCommand()
         {
+            // Создать сцену во время Play нельзя: NewScene бросает исключение,
+            // сборка обрывается на середине, а игрок видит прежнюю сцену и
+            // думает, что правки не применились.
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorUtility.DisplayDialog(
+                    "Сначала остановите игру",
+                    "Сцену нельзя собрать в режиме Play.\n\n" +
+                    "Нажмите Stop, затем повторите команду.",
+                    "Понятно");
+                return;
+            }
+
             if (!EditorUtility.DisplayDialog(
                     "Собрать тестовую сцену",
                     "Будет создан контент прототипа и сцена Prototype_Qonaev.\n\n" +
@@ -475,7 +488,7 @@ namespace QonaevLife.Editor
         /// </summary>
         private static void EnsureEventSystem()
         {
-            if (Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() != null)
+            if (Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>() != null)
                 return;
 
             var eventSystem = new GameObject("EventSystem");
@@ -621,7 +634,7 @@ namespace QonaevLife.Editor
             label.fontSize = fontSize;
             label.alignment = TextAlignmentOptions.Left;
             label.color = Color.white;
-            label.enableWordWrapping = false;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
             label.overflowMode = TextOverflowModes.Ellipsis;
 
             var labelRect = label.rectTransform;
@@ -656,7 +669,7 @@ namespace QonaevLife.Editor
             label.alignment = alignment;
             label.color = Color.white;
             label.text = string.Empty;
-            label.enableWordWrapping = true;
+            label.textWrappingMode = TextWrappingModes.Normal;
 
             // Позиционируется подложка; текст растягивается внутри неё.
             var backdropRect = backdrop.rectTransform;

@@ -346,7 +346,7 @@ namespace QonaevLife.Editor
             var label = CreateText(buttonObject.transform, "Label", caption, fontSize,
                 new Vector2(0.5f, 0.5f), new Vector2(width - 24f, height - 8f),
                 TextAlignmentOptions.Center);
-            label.enableWordWrapping = false;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
             label.overflowMode = TextOverflowModes.Ellipsis;
 
             return button;
@@ -464,7 +464,7 @@ namespace QonaevLife.Editor
             var label = CreateText(marker.transform, "Label", string.Empty, 16f,
                 new Vector2(0.5f, 0.5f), new Vector2(200f, 26f), TextAlignmentOptions.Left);
             label.rectTransform.anchoredPosition = new Vector2(108f, 0f);
-            label.enableWordWrapping = false;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
 
             marker.SetActive(false);
             return rect;

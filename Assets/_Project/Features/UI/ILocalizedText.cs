@@ -121,6 +121,9 @@ namespace QonaevLife.UI
 
                 // Общие
                 ["common.back"] = "Назад",
+                // Обозначение валюты словом: символ ₸ отсутствует в
+                // LiberationSans и заменяется прямоугольником.
+                ["common.currency"] = "тг",
                 ["common.minutes"] = "мин",
 
                 // Подсказки взаимодействия

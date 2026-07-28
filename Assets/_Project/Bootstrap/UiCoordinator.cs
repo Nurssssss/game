@@ -41,7 +41,7 @@ namespace QonaevLife.Bootstrap
             _settings = settings;
             _menuModel = new MainMenuModel(session.SaveService);
 
-            _playerInput = FindFirstObjectByType<Player.PlayerInputBridge>();
+            _playerInput = FindAnyObjectByType<Player.PlayerInputBridge>();
 
             BindScreens(text);
 
@@ -54,28 +54,28 @@ namespace QonaevLife.Bootstrap
         {
             var bus = _session.EventBus;
 
-            _mainMenu = FindFirstObjectByType<MainMenuView>();
+            _mainMenu = FindAnyObjectByType<MainMenuView>();
             if (_mainMenu != null)
             {
                 _mainMenu.BindScreen(bus, _router, text);
                 _mainMenu.BindMenu(bus, _menuModel);
             }
 
-            _saveSlots = FindFirstObjectByType<SaveSlotsView>();
+            _saveSlots = FindAnyObjectByType<SaveSlotsView>();
             if (_saveSlots != null)
             {
                 _saveSlots.BindScreen(bus, _router, text);
                 _saveSlots.BindSlots(bus, _menuModel);
             }
 
-            _settingsView = FindFirstObjectByType<SettingsView>();
+            _settingsView = FindAnyObjectByType<SettingsView>();
             if (_settingsView != null)
             {
                 _settingsView.BindScreen(bus, _router, text);
                 _settingsView.BindSettings(_settings);
             }
 
-            _phone = FindFirstObjectByType<PhoneView>();
+            _phone = FindAnyObjectByType<PhoneView>();
             if (_phone != null)
             {
                 _phone.BindScreen(bus, _router, text);
@@ -86,7 +86,7 @@ namespace QonaevLife.Bootstrap
                 _phone.BindPhone(phoneModel);
             }
 
-            var mapView = FindFirstObjectByType<MapView>();
+            var mapView = FindAnyObjectByType<MapView>();
             if (mapView != null)
             {
                 var mapModel = new MapModel(_session.Locations);
@@ -98,7 +98,7 @@ namespace QonaevLife.Bootstrap
                     objectiveProvider: () => _session.Jobs.CurrentTargetLocationId);
             }
 
-            var applier = FindFirstObjectByType<SettingsApplier>();
+            var applier = FindAnyObjectByType<SettingsApplier>();
             if (applier != null)
                 applier.Bind(bus, _settings, _session.Language);
         }

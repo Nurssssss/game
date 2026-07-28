@@ -72,14 +72,12 @@ namespace QonaevLife.Bootstrap
         {
             var context = new InteractionContext(_session.EventBus, _session.Clock);
 
-            foreach (var binder in FindObjectsByType<Player.PlayerSessionBinder>(
-                         FindObjectsSortMode.None))
+            foreach (var binder in FindObjectsByType<Player.PlayerSessionBinder>())
             {
                 binder.Detector?.Bind(_session.EventBus, context);
             }
 
-            foreach (var interactable in FindObjectsByType<World.LocationInteractable>(
-                         FindObjectsSortMode.None))
+            foreach (var interactable in FindObjectsByType<World.LocationInteractable>())
             {
                 interactable.Bind(_session.Locations);
             }
@@ -88,39 +86,37 @@ namespace QonaevLife.Bootstrap
             // подключается отдельно (FR-094).
             var localizedText = UI.DictionaryLocalizedText.CreateRussianPrototype();
 
-            foreach (var lighting in FindObjectsByType<World.DayNightLighting>(
-                         FindObjectsSortMode.None))
+            foreach (var lighting in FindObjectsByType<World.DayNightLighting>())
             {
                 lighting.Bind(_session.Clock);
             }
 
-            foreach (var prompt in FindObjectsByType<UI.InteractionPromptView>(
-                         FindObjectsSortMode.None))
+            foreach (var prompt in FindObjectsByType<UI.InteractionPromptView>())
             {
                 prompt.Bind(_session.EventBus, localizedText);
             }
 
-            foreach (var hud in FindObjectsByType<UI.HudView>(FindObjectsSortMode.None))
+            foreach (var hud in FindObjectsByType<UI.HudView>())
             {
                 hud.Bind(_session.EventBus, _session.Clock, _session.Wallet,
                     _session.Jobs, _session.Locations, localizedText);
             }
 
-            var dialogueView = FindFirstObjectByType<UI.DialogueView>();
+            var dialogueView = FindAnyObjectByType<UI.DialogueView>();
             if (dialogueView != null)
             {
                 dialogueView.Bind(_session.EventBus, _session.Dialogue,
                     _session.Language, localizedText);
             }
 
-            var gate = FindFirstObjectByType<UI.DialogueInputGate>();
-            var playerInput = FindFirstObjectByType<Player.PlayerInputBridge>();
+            var gate = FindAnyObjectByType<UI.DialogueInputGate>();
+            var playerInput = FindAnyObjectByType<Player.PlayerInputBridge>();
             if (gate != null && dialogueView != null)
                 gate.Bind(_session.EventBus, playerInput, dialogueView);
 
             // Экраны меню, слотов, настроек и телефона. Координатор создаётся
             // здесь же, если его нет на сцене: сцену можно собрать без него.
-            var uiCoordinator = FindFirstObjectByType<UiCoordinator>()
+            var uiCoordinator = FindAnyObjectByType<UiCoordinator>()
                                 ?? gameObject.AddComponent<UiCoordinator>();
 
             uiCoordinator.Bind(_session, _session.Router, _session.Settings, localizedText);

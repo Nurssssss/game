@@ -29,6 +29,17 @@ namespace QonaevLife.Editor
         [MenuItem("Qonaev Life/Создать контент прототипа", priority = 10)]
         public static void BuildMenuCommand()
         {
+            // Правка ассетов во время Play не сохраняется на диск.
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorUtility.DisplayDialog(
+                    "Сначала остановите игру",
+                    "Контент нельзя создать в режиме Play.\n\n" +
+                    "Нажмите Stop, затем повторите команду.",
+                    "Понятно");
+                return;
+            }
+
             var database = Build();
 
             Selection.activeObject = database;

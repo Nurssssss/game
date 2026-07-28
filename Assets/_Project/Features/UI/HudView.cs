@@ -112,7 +112,7 @@ namespace QonaevLife.UI
                 return;
 
             _lastShownBalance = _wallet.Balance;
-            moneyLabel.text = $"{_text.Resolve("hud.money")}: {_wallet.Balance} ₸";
+            moneyLabel.text = $"{_text.Resolve("hud.money")}: {_wallet.Balance} {_text.Resolve("common.currency")}";
         }
 
         private void RefreshObjective()
@@ -147,7 +147,7 @@ namespace QonaevLife.UI
         private void OnShiftFinished(ShiftFinishedEvent finished)
         {
             var message = finished.State == ShiftState.Completed
-                ? $"{_text.Resolve("job.shift_completed")} {finished.Payout} ₸"
+                ? $"{_text.Resolve("job.shift_completed")} {finished.Payout} {_text.Resolve("common.currency")}"
                 : _text.Resolve("job.shift_failed");
 
             ShowNotification(message);
