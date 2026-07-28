@@ -202,13 +202,13 @@ namespace QonaevLife.Editor
                 // кварталов застройки: иначе маркер окажется внутри здания
                 // или посреди дороги.
                 (ApartmentLocationId, "loc.apartment", LocationKind.Apartment,
-                    new Vector3(-10f, 0f, -12f), true, true, 0, 23),
+                    new Vector3(-7f, 0f, -18f), true, true, 0, 23),
                 (CourierHubLocationId, "loc.courier_hub", LocationKind.WorkHub,
-                    new Vector3(10f, 0f, 14f), false, false, 6, 22),
+                    new Vector3(7f, 0f, 16f), false, false, 6, 22),
                 (ShopLocationId, "loc.shop", LocationKind.Shop,
-                    new Vector3(-10f, 0f, 16f), false, false, 8, 22),
+                    new Vector3(-7f, 0f, 20f), false, false, 8, 22),
                 (CafeLocationId, "loc.cafe", LocationKind.Cafe,
-                    new Vector3(11f, 0f, -14f), false, false, 9, 23)
+                    new Vector3(7f, 0f, -16f), false, false, 9, 23)
             };
 
         private static List<ScriptableObject> BuildLocations()

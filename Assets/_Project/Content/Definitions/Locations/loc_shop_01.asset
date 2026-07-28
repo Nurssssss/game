@@ -17,7 +17,7 @@ MonoBehaviour:
   displayNameKey: loc.shop
   kind: 1
   sectorId: sector_center
-  markerPosition: {x: -10, y: 0, z: 16}
+  markerPosition: {x: -7, y: 0, z: 20}
   isInterior: 0
   interiorAddressableKey: 
   alwaysOpen: 0
