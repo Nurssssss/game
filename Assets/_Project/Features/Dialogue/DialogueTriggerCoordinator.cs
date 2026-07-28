@@ -21,17 +21,19 @@ namespace QonaevLife.Dialogue
         private readonly DialogueService _dialogue;
         private readonly ContentDatabase _content;
         private readonly IGameClock _clock;
+        private readonly Npc.INpcService _npcService;
 
         private readonly Dictionary<string, float> _trust = new();
         private readonly Dictionary<string, HashSet<string>> _flags = new();
 
         public DialogueTriggerCoordinator(IEventBus eventBus, DialogueService dialogue,
-            ContentDatabase content, IGameClock clock)
+            ContentDatabase content, IGameClock clock, Npc.INpcService npcService = null)
         {
             _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
             _dialogue = dialogue ?? throw new ArgumentNullException(nameof(dialogue));
             _content = content ?? throw new ArgumentNullException(nameof(content));
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+            _npcService = npcService;
         }
 
         public void Initialize()
@@ -73,14 +75,36 @@ namespace QonaevLife.Dialogue
         }
 
         /// <summary>
-        /// Кто по расписанию находится в этой локации в текущую фазу суток.
-        /// Так диалог зависит от времени, а не от статичной привязки (FR-031).
+        /// Кто находится в этой локации сейчас. Ответ берётся у NpcService —
+        /// он ведёт расписания и учитывает уже совершённые переходы, поэтому
+        /// дублировать разбор расписания здесь не нужно (FR-031).
+        /// Без сервиса используется резервный разбор: диалог должен работать
+        /// в сцене без полной симуляции NPC.
         /// </summary>
         private NpcDefinition FindNpcAt(string locationId)
         {
             if (string.IsNullOrWhiteSpace(locationId))
                 return null;
 
+            if (_npcService != null)
+            {
+                foreach (var npcId in _npcService.GetNpcsAt(locationId))
+                {
+                    if (_content.TryGetNpc(npcId, out var npc)
+                        && !string.IsNullOrWhiteSpace(npc.RootDialogueId))
+                    {
+                        return npc;
+                    }
+                }
+
+                return null;
+            }
+
+            return FindByScheduleFallback(locationId);
+        }
+
+        private NpcDefinition FindByScheduleFallback(string locationId)
+        {
             var phase = _clock.Phase.ToString();
 
             foreach (var npc in _content.Npcs)

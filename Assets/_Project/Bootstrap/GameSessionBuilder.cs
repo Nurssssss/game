@@ -6,6 +6,7 @@ using QonaevLife.Dialogue;
 using QonaevLife.Economy;
 using QonaevLife.Jobs;
 using QonaevLife.Language;
+using QonaevLife.Npc;
 using QonaevLife.Player;
 using QonaevLife.World;
 
@@ -23,7 +24,7 @@ namespace QonaevLife.Bootstrap
             LanguageProgressService language, ISaveService saveService,
             LocationRegistry locations, DialogueService dialogue, JobShiftService jobs,
             DialogueTriggerCoordinator npcState, ContentDatabase content,
-            UI.UiRouter router, UI.ISettingsService settings)
+            UI.UiRouter router, UI.ISettingsService settings, NpcService npcs)
         {
             Registry = registry;
             EventBus = eventBus;
@@ -40,6 +41,7 @@ namespace QonaevLife.Bootstrap
             Content = content;
             Router = router;
             Settings = settings;
+            Npcs = npcs;
         }
 
         public ServiceRegistry Registry { get; }
@@ -57,9 +59,13 @@ namespace QonaevLife.Bootstrap
         public ContentDatabase Content { get; }
         public UI.UiRouter Router { get; }
         public UI.ISettingsService Settings { get; }
+        public NpcService Npcs { get; }
 
-        /// <summary>Продвигает время сессии на прошедший кадр.</summary>
-        public void Tick(float realDeltaSeconds)
+        /// <summary>
+        /// Продвигает время сессии. Позиция игрока нужна, чтобы решить,
+        /// каких NPC симулировать полностью (FR-032).
+        /// </summary>
+        public void Tick(float realDeltaSeconds, UnityEngine.Vector3 playerPosition)
         {
             if (Clock.IsPaused || realDeltaSeconds <= 0f)
                 return;
@@ -70,8 +76,10 @@ namespace QonaevLife.Bootstrap
             Weather.AdvanceMinutes(gameMinutes);
             Needs.AdvanceMinutes(gameMinutes);
 
-            // После продвижения времени: смена могла просрочить лимит этапа.
+            // После продвижения времени: смена могла просрочить лимит этапа,
+            // а NPC — сменить место по расписанию.
             Jobs.Tick();
+            Npcs.Update(playerPosition);
         }
 
         /// <summary>Собирает текущее состояние сессии в сохранение (FR-003).</summary>
@@ -89,6 +97,10 @@ namespace QonaevLife.Bootstrap
             Language.CaptureState(data.language);
             NpcState.CaptureState(data.npcs);
 
+            // NpcService дописывает место и этап расписания в уже созданные
+            // записи: доверие принадлежит одному владельцу, место — другому.
+            Npcs.CaptureState(data.npcs);
+
             return data;
         }
 
@@ -105,6 +117,7 @@ namespace QonaevLife.Bootstrap
             Needs.RestoreState(data.player);
             Language.RestoreState(data.language);
             NpcState.RestoreState(data.npcs);
+            Npcs.RestoreState(data.npcs);
         }
 
         public void Shutdown() => Registry.ShutdownAll();
@@ -155,8 +168,11 @@ namespace QonaevLife.Bootstrap
             var dialogue = new DialogueService(content, eventBus, language);
             var jobs = new JobShiftService(content, eventBus, clock, wallet, locations);
 
+            var npcService = new NpcService(
+                content, eventBus, clock, locations, config.NpcSimulation);
+
             var dialogueTrigger = new DialogueTriggerCoordinator(
-                eventBus, dialogue, content, clock);
+                eventBus, dialogue, content, clock, npcService);
 
             // Координатор смены. ID берутся из конфига, а не из кода (п. 10 ТЗ).
             // dialogueGuard не даёт выдать смену молча там, где стоит NPC:
@@ -179,6 +195,8 @@ namespace QonaevLife.Bootstrap
             registry.Register(locations);
             registry.Register(dialogue);
             registry.Register(jobs);
+            registry.Register<INpcService>(npcService);
+            registry.Register(npcService);
             registry.Register(dialogueTrigger);
             registry.Register(coordinator);
             registry.Register<UI.IUiRouter>(router);
@@ -188,7 +206,8 @@ namespace QonaevLife.Bootstrap
 
             return new GameSession(
                 registry, eventBus, clock, weather, wallet, needs, language, saveService,
-                locations, dialogue, jobs, dialogueTrigger, content, router, settings);
+                locations, dialogue, jobs, dialogueTrigger, content, router, settings,
+                npcService);
         }
 
         /// <summary>

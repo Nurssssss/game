@@ -40,6 +40,10 @@ namespace QonaevLife.Bootstrap
         [Header("Язык")]
         [SerializeField] private LanguageProgressSettings language = LanguageProgressSettings.Default;
 
+        [Header("NPC")]
+        [SerializeField] [Tooltip("Радиус и бюджет полной симуляции NPC (FR-032).")]
+        private Npc.NpcSimulationSettings npcSimulation = Npc.NpcSimulationSettings.Default;
+
         [Header("Потребности")]
         [SerializeField]
         private List<NeedSettings> needs = new()
@@ -88,6 +92,7 @@ namespace QonaevLife.Bootstrap
         public long StartingCapital => startingCapital;
         public string PrimaryJobId => primaryJobId;
         public string PrimaryJobHubLocationId => primaryJobHubLocationId;
+        public Npc.NpcSimulationSettings NpcSimulation => npcSimulation;
         public LanguageProgressSettings Language => language;
         public IReadOnlyList<NeedSettings> Needs => needs;
         public int SaveSlotCount => saveSlotCount;
@@ -157,6 +162,12 @@ namespace QonaevLife.Bootstrap
             if (string.IsNullOrWhiteSpace(primaryJobHubLocationId))
             {
                 error = "Не задана локация выдачи смены.";
+                return false;
+            }
+
+            if (!npcSimulation.IsValid())
+            {
+                error = "Некорректные настройки симуляции NPC (FR-032).";
                 return false;
             }
 

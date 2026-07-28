@@ -142,7 +142,7 @@ namespace QonaevLife.Tests.EditMode
 
             // Скорость по умолчанию — 1 игровая минута в реальную секунду.
             for (var i = 0; i < 60; i++)
-                session.Tick(1f);
+                session.Tick(1f, Vector3.zero);
 
             Assert.That(session.Clock.TimeOfDay, Is.GreaterThan(timeBefore));
             Assert.That(session.Needs.GetValue(NeedIds.Hunger), Is.LessThan(hungerBefore));
@@ -157,7 +157,7 @@ namespace QonaevLife.Tests.EditMode
             session.Clock.Pause();
             var timeBefore = session.Clock.TimeOfDay;
 
-            session.Tick(10f);
+            session.Tick(10f, Vector3.zero);
 
             Assert.That(session.Clock.TimeOfDay, Is.EqualTo(timeBefore));
 

@@ -23,6 +23,7 @@ namespace QonaevLife.Bootstrap
         private bool startInMainMenu = true;
 
         private GameSession _session;
+        private Transform _playerTransform;
 
         /// <summary>Текущая сессия или null, если запуск не удался.</summary>
         public GameSession Session => _session;
@@ -111,6 +112,20 @@ namespace QonaevLife.Bootstrap
 
             var gate = FindAnyObjectByType<UI.DialogueInputGate>();
             var playerInput = FindAnyObjectByType<Player.PlayerInputBridge>();
+
+            if (playerInput != null)
+                _playerTransform = playerInput.transform;
+
+            // Фигуры NPC на сцене. Спавнер создаётся, если его нет: сцена
+            // должна собираться и без него.
+            var spawner = FindAnyObjectByType<Npc.NpcSpawner>();
+            if (spawner == null)
+            {
+                var spawnerObject = new GameObject("NpcSpawner");
+                spawner = spawnerObject.AddComponent<Npc.NpcSpawner>();
+            }
+
+            spawner.Bind(_session.EventBus, _session.Npcs, content);
             if (gate != null && dialogueView != null)
                 gate.Bind(_session.EventBus, playerInput, dialogueView);
 
@@ -129,7 +144,14 @@ namespace QonaevLife.Bootstrap
 
         private void Update()
         {
-            _session?.Tick(Time.deltaTime);
+            if (_session == null)
+                return;
+
+            var playerPosition = _playerTransform != null
+                ? _playerTransform.position
+                : Vector3.zero;
+
+            _session.Tick(Time.deltaTime, playerPosition);
         }
 
         private void OnDestroy()
